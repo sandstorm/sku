@@ -14,8 +14,13 @@
 
 package main
 
-import "github.com/sandstorm/sku/cmd"
+import (
+	"github.com/sandstorm/sku/cmd"
+	"github.com/sandstorm/sku/utility"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+)
 
 func main() {
+	utility.KubernetesInit()
 	cmd.Execute()
 }

@@ -1,0 +1,8 @@
+package: github.com/sandstorm/sku
+import:
+- package: k8s.io/client-go
+  version: v4.0.0
+- package: github.com/spf13/pflag
+  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+- package: github.com/logrusorgru/aurora
+  version: b9c3722b64a1976e0624448ee7f5a0744b8cf629
