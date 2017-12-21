@@ -41,6 +41,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		currentContext := utility.KubernetesApiConfig().CurrentContext
 		context := utility.KubernetesApiConfig().Contexts[currentContext]
+		fmt.Printf("Listing pods in namespace %v in context %v.\n", aurora.Green(context.Namespace), aurora.Green(currentContext))
 		podList, _ := utility.KubernetesClientset().Pods(context.Namespace).List(v1.ListOptions{})
 
 		for i, pod := range podList.Items {
