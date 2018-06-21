@@ -31,29 +31,62 @@ import (
 // enterCmd represents the enter command
 var enterCmd = &cobra.Command{
 	Use:   "enter",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Enter an interactive shell in a Kubernetes container",
+	Long: `
+Enter an interactive shell in a pod of the current namespace.
+To select the pods you want to enter, you'll see a choice list.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Optionally, you can restrict the pod list by specifying a label
+selector.
+
+`,
+	Example: `
+# get presented a choice list which container to enter
+	sku enter
+
+# you can optionally specify a label selector to enter only a subset of pods
+	sku enter app=foo
+	sku enter app=foo,component=app
+
+`,
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		currentContext := utility.KubernetesApiConfig().CurrentContext
 		context := utility.KubernetesApiConfig().Contexts[currentContext]
-		fmt.Printf("Listing pods in namespace %v in context %v.\n", aurora.Green(context.Namespace), aurora.Green(currentContext))
-		podList, _ := utility.KubernetesClientset().Pods(context.Namespace).List(v1.ListOptions{})
+		labelSelector := ""
+		if len(args) == 1 {
+			labelSelector = args[0]
+			fmt.Printf("Listing pods with label %v in namespace %v in context %v.\n", aurora.Green(labelSelector), aurora.Green(context.Namespace), aurora.Green(currentContext))
+		} else {
+			fmt.Printf("Listing pods in namespace %v in context %v.\n", aurora.Green(context.Namespace), aurora.Green(currentContext))
+		}
 
+
+		podList, _ := utility.KubernetesClientset().Pods(context.Namespace).List(v1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+
+		numberOfRunningPods := 0
+		lastRunningPodIndex := 0
 		for i, pod := range podList.Items {
 			if pod.Status.Phase == clientV1.PodRunning {
 				fmt.Printf("%d: %v - %v \n", i, aurora.Green(pod.Name), pod.Labels)
+				numberOfRunningPods++
 			} else {
 				fmt.Printf("%d: %v - %v \n", i, pod.Name, pod.Labels)
 			}
-
 		}
 
-		i := getNumberChoice()
+		var i int
+		switch numberOfRunningPods {
+		case 0:
+			fmt.Printf("No running pods. Exiting!\n")
+			os.Exit(1)
+		case 1:
+			i = lastRunningPodIndex
+		default:
+			i = getNumberChoice()
+		}
 
 		fmt.Printf("Connecting to %v in %v:\n", aurora.Green(podList.Items[i].Name), aurora.Green(currentContext))
 

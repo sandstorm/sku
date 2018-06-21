@@ -1,1 +1,1 @@
-go build -i .
+go build .
