@@ -27,13 +27,16 @@ import (
 // contextCmd represents the context command
 var contextCmd = &cobra.Command{
 	Use:   "context",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Switch the Kubernetes Context",
+	Long: `
+List and switch kubernetes contexts.`,
+	Example: `
+# List all kubernetes contexts:
+	sku context
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+# Switch to a kubernetes context:
+	sku context [contextName]
+`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
