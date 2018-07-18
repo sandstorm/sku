@@ -1,8 +1,16 @@
 package: github.com/sandstorm/sku
 import:
 - package: k8s.io/client-go
-  version: v4.0.0
-- package: github.com/spf13/pflag
-  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+  version: v8.0.0
+#- package: github.com/spf13/pflag
+#  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
 - package: github.com/logrusorgru/aurora
   version: b9c3722b64a1976e0624448ee7f5a0744b8cf629
+- package: github.com/thalesignite/crypto11
+  version: a49ec8bedc9aafac9f97ff2bb1e14193a10d2a4a
+- package: github.com/miekg/pkcs11
+  version: 287d9350987cc9334667882061e202e96cdfb4d0
+- package: github.com/tmc/keyring
+  version: 839169085ae146fc7a34bcb34dfd7ab216d23991
+- package: github.com/kardianos/osext
+  version: ae77be60afb1dcacde03767a8c37337fad28ac14

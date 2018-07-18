@@ -45,19 +45,7 @@ List and switch kubernetes contexts.`,
 		} else {
 			config := utility.KubernetesApiConfig()
 			newContext := args[0]
-
-			foundContext := false
-			for context := range utility.KubernetesApiConfig().Contexts {
-				if context == newContext {
-					foundContext = true
-				}
-			}
-
-			if !foundContext {
-				fmt.Printf("%v\n", aurora.Red("Context not found; use one of the list below:"))
-				printExistingContexts()
-				os.Exit(1)
-			}
+			ensureContextExists(newContext)
 
 			config.CurrentContext = newContext
 			clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
@@ -65,6 +53,22 @@ List and switch kubernetes contexts.`,
 			fmt.Printf("Switched to context %v.\n", aurora.Green(newContext))
 		}
 	},
+}
+
+func ensureContextExists(newContext string) {
+	foundContext := false
+	for context := range utility.KubernetesApiConfig().Contexts {
+		if context == newContext {
+			foundContext = true
+		}
+	}
+
+	if !foundContext {
+		fmt.Printf("%v\n", aurora.Red("Context not found; use one of the list below:"))
+		printExistingContexts()
+		os.Exit(1)
+	}
+
 }
 
 func printExistingContexts() {

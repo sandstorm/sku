@@ -23,7 +23,7 @@ import (
 	"github.com/logrusorgru/aurora"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
-	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/api/core/v1"
 )
 
 // nsCmd represents the ns command
@@ -41,7 +41,7 @@ List and switch kubernetes namespaces.`,
 `,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		namespaceList, _ := utility.KubernetesClientset().Namespaces().List(meta_v1.ListOptions{})
+		namespaceList, _ := utility.KubernetesClientset().CoreV1().Namespaces().List(meta_v1.ListOptions{})
 
 		if len(args) == 0 {
 			fmt.Printf("Namespaces: \n")

@@ -21,6 +21,11 @@ import (
 	"os"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"bytes"
+	"os/exec"
+	"log"
+	"encoding/json"
+	"strconv"
 )
 
 var clientset *kubernetes.Clientset
@@ -64,4 +69,36 @@ func homeDir() string {
 		return h
 	}
 	return os.Getenv("USERPROFILE") // windows
+}
+
+type VersionResponse struct {
+	ClientVersion ClientVersionResponse `json:"clientVersion"`
+}
+
+type ClientVersionResponse struct {
+	Major string `json:"major"`
+	Minor string `json:"minor"`
+}
+func EnsureVersionOfKubernetesCliSupportsExternalAuth() {
+	cmd := exec.Command("kubectl", "version", "--client", "--output=json")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	response := &VersionResponse{}
+	json.Unmarshal(out.Bytes(), response)
+
+	major, _ := strconv.Atoi(response.ClientVersion.Major)
+	minor, _ := strconv.Atoi(response.ClientVersion.Minor)
+
+	supportsExternalAuth := (major == 1 && minor >= 11) || major >= 2
+	if !supportsExternalAuth {
+		log.Printf("ERROR: kubectl must be at least version 1.11 to support External Auth.\n")
+		log.Printf("Found version was: %d.%d.\n", major, minor)
+		log.Printf("To fix this issue, run 'brew install kubernetes-cli' or 'brew upgrade kubernetes-cli'\n")
+		log.Fatalf("ABORTING!\n")
+	}
 }

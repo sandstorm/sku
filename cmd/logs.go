@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sandstorm/sku/utility"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientV1 "k8s.io/client-go/pkg/api/v1"
+	clientV1 "k8s.io/api/core/v1"
 	"syscall"
 	"os"
 	"fmt"
@@ -59,7 +59,7 @@ selector.
 		}
 
 
-		podList, _ := utility.KubernetesClientset().Pods(context.Namespace).List(v1.ListOptions{
+		podList, _ := utility.KubernetesClientset().CoreV1().Pods(context.Namespace).List(v1.ListOptions{
 			LabelSelector: labelSelector,
 		})
 
