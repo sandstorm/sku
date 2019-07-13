@@ -26,7 +26,7 @@ The following commands are supported:
 - [sku ns](#sku-ns)
 - [sku enter](#sku-enter)
 - [sku logs](#sku-logs)
-- [sku encrypt (alpha)](#sku-encrypt)
+- [sku encrypt (alpha)](#sku-encrypt-alpha)
 
 
 ### sku context
@@ -109,15 +109,10 @@ PREREQUISITES:
 	sku encrypt [context]
 ```
 
-## Installation
-
-The installation is done using homebrew:
-
-```bash
-brew install sandstorm/tap/sku
-```
-
 ## Developing
+
+Simply have a modern Go version installed; check out the project somewhere (NOT in $GOPATH, as we use Go Modules),
+and then run `./build.sh`.
 
 ## Releasing new versions
 
