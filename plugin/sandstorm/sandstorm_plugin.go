@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
 	"fmt"
 	"github.com/sandstorm/sku/pkg/kubernetes"
+	"github.com/spf13/cobra"
+	"io/ioutil"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"vitess.io/vitess/go/vt/log"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"io/ioutil"
 )
 
 type plugin struct {
@@ -45,8 +45,8 @@ List and switch kubernetes contexts.`,
 				log.Fatalf("Secrets could not be fetched: %s", err)
 			}
 
-			googleProjectId := secret.Data["GOOGLE_PROJECT_ID"]
-			resticPassword := secret.Data["RESTIC_PASSWORD"]
+			//googleProjectId := secret.Data["GOOGLE_PROJECT_ID"]
+			//resticPassword := secret.Data["RESTIC_PASSWORD"]
 			googleServiceAccountJsonKey := secret.Data["GOOGLE_SERVICE_ACCOUNT_JSON_KEY"]
 
 			googleServiceKeyTempFile, err := ioutil.TempFile("", "restic_key")
@@ -58,7 +58,7 @@ List and switch kubernetes contexts.`,
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 			go func() {
-				<- sigs
+				<-sigs
 				os.Remove(googleServiceKeyTempFile.Name())
 				os.Exit(0)
 			}()
@@ -70,12 +70,9 @@ List and switch kubernetes contexts.`,
 				log.Fatal(err)
 			}
 
-
-
 		}
 	},
 }
-
 
 func (p plugin) InitializeCommands(rootCommand *cobra.Command) {
 	rootCommand.AddCommand(downloadCommand)

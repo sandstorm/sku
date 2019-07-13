@@ -1,5 +1,26 @@
 # sku 
 
+
+## Developing
+
+## Releasing new versions
+
+
+### Prerequisites for releasing
+
+ensure you have [goreleaser](https://goreleaser.com/) installed:
+
+```bash
+brew install goreleaser/tap/goreleaser
+```
+
+### Doing the release
+
+goreleaser --snapshot --skip-publish --rm-dist
+
+## Legacy
+
+
 sku context
 
 sku context "set context"

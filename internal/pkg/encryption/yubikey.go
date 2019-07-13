@@ -15,21 +15,23 @@
 package encryption
 
 import (
-	"github.com/tmc/keyring"
-	"fmt"
-	"os"
-	"github.com/thalesignite/crypto11"
-	"log"
-	"crypto"
-	"crypto/rsa"
-	"crypto/rand"
-	"crypto/aes"
-	"io"
 	"bytes"
+	"crypto"
+	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
+	"crypto/rsa"
+	"fmt"
+	"github.com/ThalesIgnite/crypto11"
+	"github.com/tmc/keyring"
+	"io"
+	"log"
+	"os"
 )
 
 const openscLibPath = "/usr/local/lib/opensc-pkcs11.so"
+
+var context *crypto11.Context
 
 func SetupCrypto() {
 	var err error
@@ -45,19 +47,19 @@ func SetupCrypto() {
 		log.Fatalf("ABORTING!\n")
 	}
 
-	config := &crypto11.PKCS11Config{
+	config := &crypto11.Config{
 		Path:        openscLibPath,
 		TokenSerial: "00000000",
 		Pin:         password,
 	}
-	crypto11.Configure(config)
+	context, _ = crypto11.Configure(config)
 
 }
 
 func EncryptAesKeyViaYubikey(aesKey []byte) []byte {
 	var yubikeyKeyPair crypto.PrivateKey
 	var err error
-	if yubikeyKeyPair, err = crypto11.FindKeyPairOnSlot(0, nil, nil); err != nil {
+	if yubikeyKeyPair, err = context.FindKeyPair(nil, nil); err != nil {
 		log.Fatalf("ERROR: could not find yubikeyKeyPair pair on slot, error was: %s\n", err)
 	}
 
@@ -75,8 +77,7 @@ func EncryptAesKeyViaYubikey(aesKey []byte) []byte {
 	log.Println("Trying to decrypt the AES Key; to ensure we can decrypt the data using the Yubikey again.")
 	log.Println("Please tap your yubikey now TWICE if it blinks.")
 
-	decrypterOpts := &rsa.PKCS1v15DecryptOptions{
-	}
+	decrypterOpts := &rsa.PKCS1v15DecryptOptions{}
 
 	plaintext, err := decrypter.Decrypt(rand.Reader, encryptedAesKey, decrypterOpts)
 	if err != nil {
@@ -92,13 +93,12 @@ func EncryptAesKeyViaYubikey(aesKey []byte) []byte {
 func DecryptAesKeyViaYubikey(encryptedAesKey []byte) []byte {
 	var yubikeyKeyPair crypto.PrivateKey
 	var err error
-	if yubikeyKeyPair, err = crypto11.FindKeyPairOnSlot(0, nil, nil); err != nil {
+	if yubikeyKeyPair, err = context.FindKeyPair(nil, nil); err != nil {
 		log.Fatalf("ERROR: could not find yubikeyKeyPair pair on slot, error was: %s\n", err)
 	}
 
 	decrypter := yubikeyKeyPair.(crypto.Decrypter)
-	decrypterOpts := &rsa.PKCS1v15DecryptOptions{
-	}
+	decrypterOpts := &rsa.PKCS1v15DecryptOptions{}
 
 	aesKey, err := decrypter.Decrypt(rand.Reader, encryptedAesKey, decrypterOpts)
 	if err != nil {
