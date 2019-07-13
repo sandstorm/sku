@@ -23,8 +23,10 @@ func main() {
 
 var downloadCommand = &cobra.Command{
 	Use:   "downloadData",
-	Short: "(sandstorm) Download data from the backup",
+	Short: "ALPHA: (sandstorm) Download data from the backup",
 	Long: `
+ALPHA Quality!
+
 List and switch kubernetes contexts.`,
 	Example: `
 # List all kubernetes contexts:

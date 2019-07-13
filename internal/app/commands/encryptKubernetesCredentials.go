@@ -37,8 +37,10 @@ type EncryptedContainer struct {
 
 var encryptKubernetesCredentials = &cobra.Command{
 	Use:   "encrypt",
-	Short: "Encrypt Kubernetes credentials via Yubikey PIV module",
+	Short: "ALPHA: Encrypt Kubernetes credentials via Yubikey PIV module",
 	Long: `
+ALPHA: Encrypt Kubernetes credentials via Yubikey PIV module
+
 You can encrypt the Client Credentials using your Yubikey's private key. This command 
 encrypts the keys and changes the Kubernetes config to decrypt the keys when you need them,
 by setting up the "sku decryptCredentials" command as Exec Authentication Plugin for Kubectl.
@@ -123,7 +125,8 @@ type execCredentialStatus struct {
 
 var decryptKubernetesCredentials = &cobra.Command{
 	Use:   "decryptCredentials",
-	Short: "Decrypt Kubernetes credentials (to be used as external auth provider in kubectl)",
+	Hidden: true,
+	Short: "ALPHA: Decrypt Kubernetes credentials (part of sku encrypt)",
 	Long: `
 You never need to run this command manually, as "sku encrypt" sets up this command as external kubectl
 auth provider.

@@ -65,3 +65,7 @@ brews:
     # Your app's description.
     # Default is empty.
     description: "Sandstorm Kubernetes Tools"
+    install: |
+      bin.install "sku"
+      "#{bin}/sku_plugins".mkpath
+      bin.install "sku_plugins/sandstorm.so"

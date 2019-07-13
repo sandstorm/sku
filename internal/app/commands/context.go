@@ -26,11 +26,11 @@ import (
 // contextCmd represents the context command
 var contextCmd = &cobra.Command{
 	Use:   "context",
-	Short: "Switch the Kubernetes Context",
+	Short: "Switch the Kubernetes Context, i.e. different clusters",
 	Long: `
-List and switch kubernetes contexts.`,
+This command allows to switch between different configured Kubernetes clusters.`,
 	Example: `
-# List all kubernetes contexts:
+# List all kubernetes contexts in your Kubernetes config:
 	sku context
 
 # Switch to a kubernetes context:

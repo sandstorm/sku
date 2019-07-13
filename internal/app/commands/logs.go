@@ -31,7 +31,7 @@ var logsCmd = &cobra.Command{
 	Short: "Show logs in a Kubernetes container",
 	Long: `
 Show the logs of a pod of the current namespace.
-To select the pods you want to enter, you'll see a choice list.
+To select the pods you want to get the logs for, you'll see a choice list.
 
 Optionally, you can restrict the pod list by specifying a label
 selector.
@@ -42,6 +42,7 @@ selector.
 	sku logs
 
 # you can optionally specify a label selector to show only the specific logs
+# You cannot specify a pod name directly, as they change very often anyways.
 	sku logs app=foo
 	sku logs app=foo,component=app
 

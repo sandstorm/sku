@@ -45,6 +45,7 @@ selector.
 	sku enter
 
 # you can optionally specify a label selector to enter only a subset of pods
+# You cannot specify a pod name directly, as they change very often anyways.
 	sku enter app=foo
 	sku enter app=foo,component=app
 

@@ -24,11 +24,10 @@ import (
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "sku",
-	Short: "Sandstorm Kubernetes Tools - Convenience tools to shorten long Kubectl calls",
+	Short: "Sandstorm Kubernetes Tools - Convenience tools to avoid long kubectl calls",
 	Long: `
-Sandstorm Kubernetes Tools - Convenience tools to shorten long Kubectl calls
-
-A list of Kubernetes tools for convenience :) 
+Sandstorm Kubernetes Tools - Convenience tools to avoid long kubectl calls. Provides
+convenience tooling to switch contexts and namespaces, enter containers, and many more.
 `,
 }
 
