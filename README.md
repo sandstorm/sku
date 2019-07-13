@@ -8,11 +8,17 @@
 
 ### Prerequisites for releasing
 
-ensure you have [goreleaser](https://goreleaser.com/) installed:
+1. ensure you have [goreleaser](https://goreleaser.com/) installed:
 
-```bash
-brew install goreleaser/tap/goreleaser
-```
+  ```bash
+  brew install goreleaser/tap/goreleaser
+  ```
+
+2. Create a new token for goreleaser [in your GitHub settings](https://github.com/settings/tokens); select the `repo` scope.
+
+3. put the just-created token into the file `~/.config/goreleaser/github_token`
+
+
 
 ### Doing the release
 

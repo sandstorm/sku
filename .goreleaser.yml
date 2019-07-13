@@ -1,0 +1,85 @@
+env_files:
+  github_token: ~/.config/goreleaser/github_token
+
+before:
+  hooks:
+    - go mod download
+builds:
+  -
+    id: "sku"
+    main: ./cmd/sku/sku.go
+
+    binary: build/sku
+
+    # Custom environment variables to be set during the builds.
+    # Default is empty.
+    env:
+      - CGO_ENABLED=0
+
+    goos:
+      - darwin
+
+    goarch:
+      - amd64
+
+  -
+    id: "sandstorm_plugin"
+    main: plugin/sandstorm/sandstorm_plugin.go
+
+    binary: build/sandstorm_plugin
+
+    flags: -buildmode=plugin
+
+    env:
+      - CGO_ENABLED=0
+
+    goos:
+      - darwin
+
+    goarch:
+      - amd64
+
+
+archives:
+- replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+
+brews:
+  -
+    name: sku
+
+    github:
+      owner: sandstorm
+      name: homebrew-tap
+
+    # Git author used to commit to the repository.
+    # Defaults are shown.
+    commit_author:
+      name: Sandstorm Release Bot
+      email: release-bot@sandstorm.de
+
+    # Folder inside the repository to put the formula.
+    # Default is the root folder.
+    folder: Formula
+
+    # Your app's homepage.
+    # Default is empty.
+    homepage: "https://github.com/sandstorm/sku"
+
+    # Your app's description.
+    # Default is empty.
+    description: "Sandstorm Kubernetes Tools"
