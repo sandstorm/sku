@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package commands
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/sandstorm/sku/utility"
 	"github.com/logrusorgru/aurora"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
+	"github.com/sandstorm/sku/pkg/kubernetes"
 )
 
 // contextCmd represents the context command
@@ -41,11 +40,11 @@ List and switch kubernetes contexts.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Printf("Contexts: \n")
-			printExistingContexts()
+			kubernetes.PrintExistingContexts()
 		} else {
-			config := utility.KubernetesApiConfig()
+			config := kubernetes.KubernetesApiConfig()
 			newContext := args[0]
-			ensureContextExists(newContext)
+			kubernetes.EnsureContextExists(newContext)
 
 			config.CurrentContext = newContext
 			clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
@@ -55,36 +54,9 @@ List and switch kubernetes contexts.`,
 	},
 }
 
-func ensureContextExists(newContext string) {
-	foundContext := false
-	for context := range utility.KubernetesApiConfig().Contexts {
-		if context == newContext {
-			foundContext = true
-		}
-	}
-
-	if !foundContext {
-		fmt.Printf("%v\n", aurora.Red("Context not found; use one of the list below:"))
-		printExistingContexts()
-		os.Exit(1)
-	}
-
-}
-
-func printExistingContexts() {
-	currentContext := utility.KubernetesApiConfig().CurrentContext
-	for context := range utility.KubernetesApiConfig().Contexts {
-		if context == currentContext {
-			fmt.Printf("* %v\n", aurora.Green(context))
-		} else {
-			fmt.Printf("  %v\n", context)
-		}
-	}
-
-}
 
 func init() {
-	rootCmd.AddCommand(contextCmd)
+	RootCmd.AddCommand(contextCmd)
 
 	// Here you will define your flags and configuration settings.
 

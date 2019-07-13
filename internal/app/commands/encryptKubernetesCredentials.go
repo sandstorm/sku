@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package commands
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/sandstorm/sku/utility/encryption"
-	"github.com/sandstorm/sku/utility"
 	"github.com/logrusorgru/aurora"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"github.com/kardianos/osext"
 	"log"
 	"k8s.io/client-go/tools/clientcmd"
 	"encoding/json"
 	"os"
+	"github.com/sandstorm/sku/internal/pkg/encryption"
+	"github.com/sandstorm/sku/pkg/kubernetes"
+	"github.com/sandstorm/sku/pkg/utility"
 )
 
 type EncryptedContainer struct {
@@ -58,22 +58,17 @@ PREREQUISITES:
 
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		utility.EnsureVersionOfKubernetesCliSupportsExternalAuth()
+		kubernetes.EnsureVersionOfKubernetesCliSupportsExternalAuth()
 		encryption.SetupCrypto()
 
 		contextToSetupEncryptionFor := args[0]
-		ensureContextExists(contextToSetupEncryptionFor)
+		kubernetes.EnsureContextExists(contextToSetupEncryptionFor)
 
 		fmt.Printf("Setting up encryption for context %v\n", aurora.Green(contextToSetupEncryptionFor))
-		config := utility.KubernetesApiConfig()
+		config := kubernetes.KubernetesApiConfig()
 		context := config.Contexts[contextToSetupEncryptionFor]
 		fmt.Printf("- found user %v\n", aurora.Bold(context.AuthInfo))
 		authInfo := config.AuthInfos[context.AuthInfo]
-
-		skuExecutablePathAndFilename, err := osext.Executable()
-		if err != nil {
-			log.Fatalf("FATAL: could not find the executable path of the sku binary, error was: %v\n", err)
-		}
 
 		aesKey := encryption.GenerateRandomAesKey()
 
@@ -98,7 +93,7 @@ PREREQUISITES:
 		}
 
 		authInfo.Exec = &api.ExecConfig{
-			Command: skuExecutablePathAndFilename,
+			Command: utility.GetSkuExecutableFileName(),
 			Args:[]string{"decryptCredentials", context.AuthInfo},
 			APIVersion: "client.authentication.k8s.io/v1beta1",
 			Env: []api.ExecEnvVar{
@@ -139,7 +134,7 @@ auth provider.
 		encryption.SetupCrypto()
 
 		authInfoToDecrypt := args[0]
-		authInfo := utility.KubernetesApiConfig().AuthInfos[authInfoToDecrypt]
+		authInfo := kubernetes.KubernetesApiConfig().AuthInfos[authInfoToDecrypt]
 
 		jsonContainer := findEncryptedClientKeyAndCertificateInAuthInfo(authInfo)
 		container := &EncryptedContainer {}
@@ -184,6 +179,6 @@ func findEncryptedClientKeyAndCertificateInAuthInfo(authInfo *api.AuthInfo) stri
 
 
 func init() {
-	rootCmd.AddCommand(encryptKubernetesCredentials)
-	rootCmd.AddCommand(decryptKubernetesCredentials)
+	RootCmd.AddCommand(encryptKubernetesCredentials)
+	RootCmd.AddCommand(decryptKubernetesCredentials)
 }

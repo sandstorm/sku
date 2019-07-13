@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package commands
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/sandstorm/sku/utility"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/logrusorgru/aurora"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
-	"k8s.io/api/core/v1"
+	"github.com/sandstorm/sku/pkg/kubernetes"
 )
 
 // nsCmd represents the ns command
@@ -41,30 +39,18 @@ List and switch kubernetes namespaces.`,
 `,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		namespaceList, _ := utility.KubernetesClientset().CoreV1().Namespaces().List(meta_v1.ListOptions{})
+		namespaceList, _ := kubernetes.KubernetesClientset().CoreV1().Namespaces().List(meta_v1.ListOptions{})
 
 		if len(args) == 0 {
 			fmt.Printf("Namespaces: \n")
-			printExistingNamespaces(namespaceList)
+			kubernetes.PrintExistingNamespaces(namespaceList)
 		} else {
-			config := utility.KubernetesApiConfig()
+			config := kubernetes.KubernetesApiConfig()
 			currentContext := config.CurrentContext
-			context := utility.KubernetesApiConfig().Contexts[currentContext]
-
+			context := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 			newNamespace := args[0]
 
-			foundNamespace := false
-			for _, ns := range namespaceList.Items {
-				if newNamespace == ns.Name {
-					foundNamespace = true
-				}
-			}
-
-			if !foundNamespace {
-				fmt.Printf("%v\n", aurora.Red("Namespace not found; use one of the list below:"))
-				printExistingNamespaces(namespaceList)
-				os.Exit(1)
-			}
+			kubernetes.EnsureNamespaceExists(newNamespace, namespaceList)
 
 			context.Namespace = newNamespace
 			clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
@@ -74,24 +60,11 @@ List and switch kubernetes namespaces.`,
 	},
 }
 
-func printExistingNamespaces(namespaceList *v1.NamespaceList) {
-	currentContext := utility.KubernetesApiConfig().CurrentContext
-	context := utility.KubernetesApiConfig().Contexts[currentContext]
-
-	for _, ns := range namespaceList.Items {
-		if context.Namespace == ns.Name {
-			fmt.Printf("* %v\n", aurora.Green(ns.Name))
-		} else {
-			fmt.Printf("  %v\n", ns.Name)
-		}
-
-	}
-}
 
 
 
 func init() {
-	rootCmd.AddCommand(nsCmd)
+	RootCmd.AddCommand(nsCmd)
 
 	// Here you will define your flags and configuration settings.
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utility
+package kubernetes
 
 import (
 	"path/filepath"
@@ -26,6 +26,9 @@ import (
 	"log"
 	"encoding/json"
 	"strconv"
+	"fmt"
+	"github.com/logrusorgru/aurora"
+	"k8s.io/api/core/v1"
 )
 
 var clientset *kubernetes.Clientset
@@ -100,5 +103,63 @@ func EnsureVersionOfKubernetesCliSupportsExternalAuth() {
 		log.Printf("Found version was: %d.%d.\n", major, minor)
 		log.Printf("To fix this issue, run 'brew install kubernetes-cli' or 'brew upgrade kubernetes-cli'\n")
 		log.Fatalf("ABORTING!\n")
+	}
+}
+
+
+func EnsureContextExists(newContext string) {
+	foundContext := false
+	for context := range KubernetesApiConfig().Contexts {
+		if context == newContext {
+			foundContext = true
+		}
+	}
+
+	if !foundContext {
+		fmt.Printf("%v\n", aurora.Red("Context not found; use one of the list below:"))
+		PrintExistingContexts()
+		os.Exit(1)
+	}
+
+}
+
+func PrintExistingContexts() {
+	currentContext := KubernetesApiConfig().CurrentContext
+	for context := range KubernetesApiConfig().Contexts {
+		if context == currentContext {
+			fmt.Printf("* %v\n", aurora.Green(context))
+		} else {
+			fmt.Printf("  %v\n", context)
+		}
+	}
+
+}
+
+func EnsureNamespaceExists(namespace string, namespaceList *v1.NamespaceList) {
+	foundNamespace := false
+	for _, ns := range namespaceList.Items {
+		if namespace == ns.Name {
+			foundNamespace = true
+		}
+	}
+
+	if !foundNamespace {
+		fmt.Printf("%v\n", aurora.Red("Namespace not found; use one of the list below:"))
+		PrintExistingNamespaces(namespaceList)
+		os.Exit(1)
+	}
+}
+
+func PrintExistingNamespaces(namespaceList *v1.NamespaceList) {
+	currentContext := KubernetesApiConfig().CurrentContext
+	context := KubernetesApiConfig().Contexts[currentContext]
+
+	for _, ns := range namespaceList.Items {
+		if context.Namespace == ns.Name {
+			fmt.Printf("* %v\n", aurora.Green(ns.Name))
+		} else {
+			fmt.Printf("  %v\n", ns.Name)
+		}
+
 	}
 }

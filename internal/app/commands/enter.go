@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package commands
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/sandstorm/sku/utility"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientV1 "k8s.io/api/core/v1"
 	"syscall"
@@ -26,6 +25,7 @@ import (
 	"bufio"
 	"strconv"
 	"strings"
+	"github.com/sandstorm/sku/pkg/kubernetes"
 )
 
 // enterCmd represents the enter command
@@ -51,8 +51,8 @@ selector.
 `,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		currentContext := utility.KubernetesApiConfig().CurrentContext
-		context := utility.KubernetesApiConfig().Contexts[currentContext]
+		currentContext := kubernetes.KubernetesApiConfig().CurrentContext
+		context := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 		labelSelector := ""
 		if len(args) == 1 {
 			labelSelector = args[0]
@@ -62,7 +62,7 @@ selector.
 		}
 
 
-		podList, _ := utility.KubernetesClientset().CoreV1().Pods(context.Namespace).List(v1.ListOptions{
+		podList, _ := kubernetes.KubernetesClientset().CoreV1().Pods(context.Namespace).List(v1.ListOptions{
 			LabelSelector: labelSelector,
 		})
 
@@ -107,7 +107,7 @@ func getNumberChoice() int {
 }
 
 func init() {
-	rootCmd.AddCommand(enterCmd)
+	RootCmd.AddCommand(enterCmd)
 
 	// Here you will define your flags and configuration settings.
 
