@@ -67,5 +67,6 @@ brews:
     description: "Sandstorm Kubernetes Tools"
     install: |
       bin.install "sku"
-      "#{bin}/sku_plugins".mkpath
+      sku_plugins = bin/"sku_plugins"
+      sku_plugins.mkpath
       bin.install "sku_plugins/sandstorm.so"
