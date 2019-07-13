@@ -28,6 +28,7 @@ The following commands are supported:
 - [sku enter](#sku-enter)
 - [sku logs](#sku-logs)
 - [sku encrypt (alpha)](#sku-encrypt-alpha)
+- [sku rancher-backup (alpha)](#sku-rancher-backup-alpha)
 
 
 ### sku context
@@ -120,6 +121,22 @@ PREREQUISITES:
 # You need to tap your yubikey during setup; so that decryption can be properly tested.
 	sku encrypt [context]
 ```
+
+### sku rancher-backup (alpha)
+
+This command allows backing up a Rancher server, by fetching all API resources. The result is stored
+in the current directory, and should be versioned in Git.
+
+NOTE: it is *NOT* possible to directly import the Rancher config which has been exported this way,
+      but it can help to have a human-readable representation of the different resources; so that
+      it is traceable when/if some options have changed.
+
+*Examples:*
+
+```
+sku rancher-backup --url https://your-rancher-server.de/v3 --token BEARER-TOKEN-HERE --output ./backup-directory
+```
+
 
 ## Developing
 
