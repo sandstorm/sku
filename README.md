@@ -23,6 +23,7 @@ Then, use `sku help` to get inline help, or e.g. run `sku ns` to list all namesp
 The following commands are supported:
 
 - [sku context](#sku-context)
+- [sku add-config](#sku-add-config)
 - [sku ns](#sku-ns)
 - [sku enter](#sku-enter)
 - [sku logs](#sku-logs)
@@ -37,6 +38,17 @@ The following commands are supported:
 
 **Switch the active context**: `sku context [context-name]`
 
+
+### sku add-config
+
+This command allows adding an external kubeconfig file to the default ~/.kube/config;
+so you can actually merge multiple Kubernetes configs together which you got from different sources.
+
+*Example*:
+
+```bash
+sku add-config path-to-additional-kubeconfig-file
+```
 
 ### sku ns
 
