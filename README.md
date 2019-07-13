@@ -22,7 +22,20 @@
 
 ### Doing the release
 
-goreleaser --snapshot --skip-publish --rm-dist
+Testing a release:
+
+```
+goreleaser --snapshot --skip-publish --rm-dist --debug
+```
+
+Executing a release:
+
+1. Commit all changes, create a new tag and push it.
+
+```
+git tag v0.9.0
+```
+
 
 ## Legacy
 

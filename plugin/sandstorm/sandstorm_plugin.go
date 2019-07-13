@@ -17,6 +17,10 @@ type plugin struct {
 
 const backupSecretName = "read-from-backup"
 
+func main() {
+	println("This is a sku plugin - not to be executed directly. This main function is needed to make goreleaser happy :-)")
+}
+
 var downloadCommand = &cobra.Command{
 	Use:   "downloadData",
 	Short: "(sandstorm) Download data from the backup",

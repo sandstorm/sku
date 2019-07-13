@@ -8,37 +8,19 @@ builds:
   -
     id: "sku"
     main: ./cmd/sku/sku.go
-
-    binary: build/sku
-
-    # Custom environment variables to be set during the builds.
-    # Default is empty.
-    env:
-      - CGO_ENABLED=0
-
     goos:
       - darwin
-
     goarch:
       - amd64
-
   -
     id: "sandstorm_plugin"
     main: plugin/sandstorm/sandstorm_plugin.go
-
-    binary: build/sandstorm_plugin
-
     flags: -buildmode=plugin
-
-    env:
-      - CGO_ENABLED=0
-
+    binary: "sku_plugins/sandstorm.so"
     goos:
       - darwin
-
     goarch:
       - amd64
-
 
 archives:
 - replacements:
