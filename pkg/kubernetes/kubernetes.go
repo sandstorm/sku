@@ -15,32 +15,32 @@
 package kubernetes
 
 import (
-	"path/filepath"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/kubernetes"
-	"os"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd/api"
 	"bytes"
-	"os/exec"
-	"log"
 	"encoding/json"
-	"strconv"
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"log"
+	"os"
+	"os/exec"
+	"strconv"
 )
 
 var clientset *kubernetes.Clientset
 var config *rest.Config
-var apiConfig *api.Config
+var apiConfig *clientcmdapi.Config
 func KubernetesInit() {
-	var kubeconfig = filepath.Join(homeDir(), ".kube", "config")
 
+	loader := clientcmd.NewDefaultClientConfigLoadingRules()
 	var err error
-	apiConfig = clientcmd.GetConfigFromFileOrDie(kubeconfig)
-	// use the current context in kubeconfig
-	config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	apiConfig, err = loader.Load()
+
+	config, err = clientcmd.BuildConfigFromKubeconfigGetter("", loader.Load)
+
 	if err != nil {
 		panic(err.Error())
 	}
@@ -53,25 +53,13 @@ func KubernetesInit() {
 }
 
 
-func KubernetesConfig() *rest.Config {
-	return config
-}
-
-func KubernetesApiConfig() *api.Config {
+func KubernetesApiConfig() *clientcmdapi.Config {
 	return apiConfig
 }
 
 
 func KubernetesClientset() *kubernetes.Clientset {
 	return clientset
-}
-
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE") // windows
 }
 
 type VersionResponse struct {
