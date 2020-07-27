@@ -1,14 +1,14 @@
 package pluginLoader
 
 import (
-	"github.com/sandstorm/sku/pkg/utility"
-	"path/filepath"
-	"io/ioutil"
-	"os"
-	"log"
-	"plugin"
-	"github.com/sandstorm/sku/pkg/skuPluginApi"
 	"github.com/sandstorm/sku/internal/app/commands"
+	"github.com/sandstorm/sku/pkg/skuPluginApi"
+	"github.com/sandstorm/sku/pkg/utility"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"plugin"
 )
 
 func Load() {
@@ -33,7 +33,7 @@ func Load() {
 		log.Fatalf("could not ReadDir of folder %s: %s", skuPluginDirectory, err)
 	}
 	for _, pluginFile := range pluginFiles {
-		log.Printf("Finding plugin %s", pluginFile.Name())
+		//log.Printf("Finding plugin %s", pluginFile.Name())
 		pluginInstance, err := plugin.Open(filepath.Join(skuPluginDirectory, pluginFile.Name()))
 		if err != nil {
 			log.Fatalf("There was an error opening the plugin %s: %s", pluginFile.Name(), err)

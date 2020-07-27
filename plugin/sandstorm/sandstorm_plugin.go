@@ -8,6 +8,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 )
@@ -15,73 +16,133 @@ import (
 type plugin struct {
 }
 
-const backupSecretName = "read-from-backup"
+const backupSecretNamespace = "backup-job-downloads"
+const backupSecretName = "backup-readonly-credentials"
 
 func main() {
 	println("This is a sku plugin - not to be executed directly. This main function is needed to make goreleaser happy :-)")
 }
 
-var downloadCommand = &cobra.Command{
-	Use:   "downloadData",
-	Short: "ALPHA: (sandstorm) Download data from the backup",
+var mountCommand = &cobra.Command{
+	Use:     "mount-backup",
+	Aliases: []string{"mount"},
+	Short:   "ALPHA: (sandstorm) Mount the backup to ~/src/k8s/backup/[nodename]",
 	Long: `
 ALPHA Quality!
 
-List and switch kubernetes contexts.`,
-	Example: `
-# List all kubernetes contexts:
-	sku context
+Prerequisites:  
+     brew cask install osxfuse
+     brew install borgbackup
 
-# Switch to a kubernetes context:
-	sku context [contextName]
+On first run, you'll get an error about untrusted software. '
 `,
-	Args: cobra.MaximumNArgs(1),
+	Example: `
+	sku mount-backup worker1
+	sku mount-backup worker2
+`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		namespaceList, _ := kubernetes.KubernetesClientset().CoreV1().Namespaces().List(meta_v1.ListOptions{})
+		secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(backupSecretNamespace).Get(backupSecretName, meta_v1.GetOptions{})
 
-		if len(args) == 0 {
-			fmt.Printf("Namespace: \n")
-			kubernetes.PrintExistingNamespaces(namespaceList)
-		} else {
-			namespace := args[0]
-			kubernetes.EnsureNamespaceExists(namespace, namespaceList)
+		if err != nil {
+			log.Fatalf("secret not found: %s", err)
+		}
 
-			secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(namespace).Get(backupSecretName, meta_v1.GetOptions{})
-			if err != nil {
-				log.Fatalf("Secrets could not be fetched: %s", err)
-			}
+		kubernetesNode := args[0]
 
-			//googleProjectId := secret.Data["GOOGLE_PROJECT_ID"]
-			//resticPassword := secret.Data["RESTIC_PASSWORD"]
-			googleServiceAccountJsonKey := secret.Data["GOOGLE_SERVICE_ACCOUNT_JSON_KEY"]
+		borgbackupSshKeyTempFile, err := ioutil.TempFile("", "borgbackup_read_ssh_key_tempfile")
+		if err != nil {
+			log.Fatalf("borgbackupSshKeyTempFile could not be created: %s", err)
+		}
+		// clean up on exit
+		defer os.Remove(borgbackupSshKeyTempFile.Name())
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-sigs
+			os.Remove(borgbackupSshKeyTempFile.Name())
+			os.Exit(0)
+		}()
 
-			googleServiceKeyTempFile, err := ioutil.TempFile("", "restic_key")
-			if err != nil {
-				log.Fatalf("Google Service Key Temp file could not be created: %s", err)
-			}
-			// clean up
-			defer os.Remove(googleServiceKeyTempFile.Name())
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-			go func() {
-				<-sigs
-				os.Remove(googleServiceKeyTempFile.Name())
-				os.Exit(0)
-			}()
+		if len(secret.Data["id_rsa"]) == 0 {
+			os.Remove(borgbackupSshKeyTempFile.Name())
+			log.Fatal("id_rsa cold not be found")
+		}
 
-			if _, err := googleServiceKeyTempFile.Write(googleServiceAccountJsonKey); err != nil {
-				log.Fatal(err)
-			}
-			if err := googleServiceKeyTempFile.Close(); err != nil {
-				log.Fatal(err)
-			}
+		log.Print(borgbackupSshKeyTempFile.Name())
 
+		if _, err := borgbackupSshKeyTempFile.Write(secret.Data["id_rsa"]); err != nil {
+			os.Remove(borgbackupSshKeyTempFile.Name())
+			log.Fatal(err)
+		}
+		if err := borgbackupSshKeyTempFile.Close(); err != nil {
+			os.Remove(borgbackupSshKeyTempFile.Name())
+			log.Fatal(err)
+		}
+
+		borgbackupRepoUrl := string(secret.Data["repo_url_"+kubernetesNode])
+		if len(borgbackupRepoUrl) == 0 {
+			os.Remove(borgbackupSshKeyTempFile.Name())
+			log.Fatalf("Repo URL for node %s not found", kubernetesNode)
+		}
+
+		userHomeDir, _ := os.UserHomeDir()
+		backupMountDir := userHomeDir + "/src/k8s/backup/" + kubernetesNode
+		os.MkdirAll(backupMountDir, os.ModePerm)
+
+		fmt.Printf("!!! In a few seconds, you'll be asked to enter the decryption key - check your password manager and search for Borgbackup.\n")
+
+		borgCommand := exec.Command("/usr/local/bin/borg", "mount", "--last", "1", "--strip-components", "1", borgbackupRepoUrl, backupMountDir)
+		env := os.Environ()
+		borgCommand.Env = append(env, fmt.Sprintf(`BORG_RSH=ssh -i %s`, borgbackupSshKeyTempFile.Name()))
+		borgCommand.Stdout = os.Stdout
+		borgCommand.Stdin = os.Stdin
+		borgCommand.Stderr = os.Stderr
+		err = borgCommand.Run()
+		if err != nil {
+			os.Remove(borgbackupSshKeyTempFile.Name())
+			log.Fatal(err)
+		}
+
+		exec.Command("open", backupMountDir).Run()
+
+		fmt.Printf("\n\nWhen you are finished, UNMOUNT the backup by running\n")
+		fmt.Printf("     sku umount-backup %s\n", kubernetesNode)
+	},
+}
+
+var umountCommand = &cobra.Command{
+	Use:     "umount-backup",
+	Aliases: []string{"umount-backup", "umount"},
+	Short:   "ALPHA: (sandstorm) Unmount the backup at ~/src/k8s/backup/[nodename]",
+	Long: `
+ALPHA Quality!
+`,
+	Example: `
+	sku umount-backup worker1
+	sku umount-backup worker2
+`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		kubernetesNode := args[0]
+
+		userHomeDir, _ := os.UserHomeDir()
+		backupMountDir := userHomeDir + "/src/k8s/backup/" + kubernetesNode
+
+		umountCommand := exec.Command("diskutil", "unmount", "force", backupMountDir)
+		umountCommand.Stdout = os.Stdout
+		umountCommand.Stdin = os.Stdin
+		umountCommand.Stderr = os.Stderr
+		err := umountCommand.Run()
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
 
 func (p plugin) InitializeCommands(rootCommand *cobra.Command) {
-	rootCommand.AddCommand(downloadCommand)
+	rootCommand.AddCommand(mountCommand)
+	rootCommand.AddCommand(umountCommand)
 }
 
 var Plugin plugin
