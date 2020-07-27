@@ -66,7 +66,5 @@ brews:
     # Default is empty.
     description: "Sandstorm Kubernetes Tools"
     install: |
-      bin.install "sku"
-      sku_plugins = bin/"sku_plugins"
-      sku_plugins.mkpath
-      bin.install "sku_plugins/sandstorm.so"
+      libexec.install Dir["*"]
+      bin.write_exec_script libexec/"sku"

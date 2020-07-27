@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	. "github.com/logrusorgru/aurora/v3"
 	"github.com/sandstorm/sku/pkg/kubernetes"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -42,13 +43,15 @@ On first run, you'll get an error about untrusted software. '
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		kubernetesNode := args[0]
+
+		fmt.Printf("Trying to mount backup for %s\n\n", Bold(kubernetesNode))
+
 		secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(backupSecretNamespace).Get(backupSecretName, meta_v1.GetOptions{})
 
 		if err != nil {
 			log.Fatalf("secret not found: %s", err)
 		}
-
-		kubernetesNode := args[0]
 
 		borgbackupSshKeyTempFile, err := ioutil.TempFile("", "borgbackup_read_ssh_key_tempfile")
 		if err != nil {
@@ -69,8 +72,6 @@ On first run, you'll get an error about untrusted software. '
 			log.Fatal("id_rsa cold not be found")
 		}
 
-		log.Print(borgbackupSshKeyTempFile.Name())
-
 		if _, err := borgbackupSshKeyTempFile.Write(secret.Data["id_rsa"]); err != nil {
 			os.Remove(borgbackupSshKeyTempFile.Name())
 			log.Fatal(err)
@@ -83,14 +84,16 @@ On first run, you'll get an error about untrusted software. '
 		borgbackupRepoUrl := string(secret.Data["repo_url_"+kubernetesNode])
 		if len(borgbackupRepoUrl) == 0 {
 			os.Remove(borgbackupSshKeyTempFile.Name())
-			log.Fatalf("Repo URL for node %s not found", kubernetesNode)
+			log.Fatalf(Colorize("Repo URL for node %s not found", RedBg).String(), kubernetesNode)
 		}
 
 		userHomeDir, _ := os.UserHomeDir()
 		backupMountDir := userHomeDir + "/src/k8s/backup/" + kubernetesNode
 		os.MkdirAll(backupMountDir, os.ModePerm)
 
-		fmt.Printf("!!! In a few seconds, you'll be asked to enter the decryption key - check your password manager and search for Borgbackup.\n")
+		fmt.Printf("In case you have your yubikey attached, %s\n\n", Colorize("you might need to touch it if it blinks.", BoldFm|BlinkFm))
+		fmt.Printf(Colorize("!!! In a few seconds, you'll be asked to enter the decryption key.\n", YellowFg).String())
+		fmt.Printf(Colorize("    Check your password manager and search for Borgbackup.\n", YellowFg).String())
 
 		borgCommand := exec.Command("/usr/local/bin/borg", "mount", "--last", "1", "--strip-components", "1", borgbackupRepoUrl, backupMountDir)
 		env := os.Environ()
