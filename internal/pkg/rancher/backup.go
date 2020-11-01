@@ -60,6 +60,12 @@ type collectionElement map[string]interface{}
 func fetchCollection(collectionUrl string, absoluteStoragePath string, rc *rancherClient, elementPostProcessCallback func(element collectionElement)) {
 	log.Printf("- %s\n", collectionUrl)
 	collection := rc.fetchUrl(collectionUrl)
+
+	if (collection.Type == "error") {
+		log.Printf("- ERROR fetching collection %s; continuing with next one.", collectionUrl)
+		return;
+	}
+
 	ensureValidCollection(collection, collectionUrl)
 
 	// create empty collection storage path
