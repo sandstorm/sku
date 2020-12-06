@@ -31,9 +31,9 @@ var mountCommand = &cobra.Command{
 	Long: `
 ALPHA Quality!
 
-Prerequisites:  
-     brew cask install osxfuse
-     brew install borgbackup
+Prerequisites (needed for mounting to work on OSX >=11.0):  
+     - Install OSXFuse by downloading https://github.com/osxfuse/osxfuse/releases (for OSX >=11.0, version 4 is known to work).
+     - Install Borgbackup by downloading borg-macos64 from https://github.com/borgbackup/borg/releases, placing it to /usr/local/bin/borg and make it executable.
 
 On first run, you'll get an error about untrusted software. '
 `,
