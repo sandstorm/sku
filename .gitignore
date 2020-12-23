@@ -2,3 +2,4 @@
 sku
 *.so
 dist
+backupConfig.json
