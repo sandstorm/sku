@@ -337,8 +337,8 @@ func readKubeFiles(fileList []string) []*KubeFile {
 
 func filterKubeFiles(kubeFiles []*KubeFile) []*KubeFile {
 	for _, kubeFile := range kubeFiles {
-		if kubeFile.Parsed.Metadata.Labels["cattle.io/creator"] == "norman" {
-			kubeFile.SkipReasons = append(kubeFile.SkipReasons, "created from Rancher - contains cattle.io/creator=norman")
+		if len(kubeFile.Parsed.Metadata.Labels["authz.cluster.cattle.io/rtb-owner-updated"]) > 0 {
+			kubeFile.SkipReasons = append(kubeFile.SkipReasons, "auto-created from Rancher - label authz.cluster.cattle.io/rtb-owner-updated")
 		}
 
 		if len(kubeFile.Parsed.Metadata.OwnerReferences) > 0 {
@@ -368,6 +368,10 @@ func filterKubeFiles(kubeFiles []*KubeFile) []*KubeFile {
 
 		if kubeFile.Parsed.Kind == "Secret" && kubeFile.Parsed.Type == "helm.sh/release.v1" {
 			kubeFile.SkipReasons = append(kubeFile.SkipReasons, "a helm secret")
+		}
+
+		if kubeFile.Parsed.Kind == "Secret" && kubeFile.Parsed.Type == "kubernetes.io/service-account-token" {
+			kubeFile.SkipReasons = append(kubeFile.SkipReasons, "a service account token")
 		}
 	}
 
