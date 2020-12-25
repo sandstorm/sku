@@ -15,13 +15,14 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/logrusorgru/aurora"
+	"github.com/sandstorm/sku/pkg/kubernetes"
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/logrusorgru/aurora"
 	"k8s.io/client-go/tools/clientcmd"
-	"github.com/sandstorm/sku/pkg/kubernetes"
 )
 
 // nsCmd represents the ns command
@@ -39,7 +40,7 @@ List and switch kubernetes namespaces.`,
 `,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		namespaceList, _ := kubernetes.KubernetesClientset().CoreV1().Namespaces().List(meta_v1.ListOptions{})
+		namespaceList, _ := kubernetes.KubernetesClientset().CoreV1().Namespaces().List(context.Background(), meta_v1.ListOptions{})
 
 		if len(args) == 0 {
 			fmt.Printf("Namespaces: \n")
@@ -60,9 +61,6 @@ List and switch kubernetes namespaces.`,
 	},
 }
 
-
-
-
 func init() {
 	RootCmd.AddCommand(nsCmd)
 
@@ -76,4 +74,3 @@ func init() {
 	// is called directly, e.g.:
 	// nsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-

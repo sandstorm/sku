@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	. "github.com/logrusorgru/aurora/v3"
@@ -51,7 +52,7 @@ On first run, you'll get an error about untrusted software. '
 
 		fmt.Printf("Trying to mount backup for %s\n\n", Bold(kubernetesNode))
 
-		secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(backupSecretNamespace).Get(backupSecretName, meta_v1.GetOptions{})
+		secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(backupSecretNamespace).Get(context.Background(), backupSecretName, meta_v1.GetOptions{})
 
 		if err != nil {
 			log.Fatalf("secret not found: %s", err)
@@ -576,7 +577,7 @@ ALPHA Quality!
 `,
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(backupSecretNamespace).Get(backupSecretName, meta_v1.GetOptions{})
+		secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(backupSecretNamespace).Get(context.Background(), backupSecretName, meta_v1.GetOptions{})
 
 		if err != nil {
 			log.Fatalf("secret not found: %s", err)

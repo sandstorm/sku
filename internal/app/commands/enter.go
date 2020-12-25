@@ -15,17 +15,18 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientV1 "k8s.io/api/core/v1"
-	"syscall"
-	"os"
+	"bufio"
+	"context"
 	"fmt"
 	"github.com/logrusorgru/aurora"
-	"bufio"
+	"github.com/sandstorm/sku/pkg/kubernetes"
+	"github.com/spf13/cobra"
+	clientV1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 	"strconv"
 	"strings"
-	"github.com/sandstorm/sku/pkg/kubernetes"
+	"syscall"
 )
 
 // enterCmd represents the enter command
@@ -53,17 +54,16 @@ selector.
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		currentContext := kubernetes.KubernetesApiConfig().CurrentContext
-		context := kubernetes.KubernetesApiConfig().Contexts[currentContext]
+		k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 		labelSelector := ""
 		if len(args) == 1 {
 			labelSelector = args[0]
-			fmt.Printf("Listing pods with label %v in namespace %v in context %v.\n", aurora.Green(labelSelector), aurora.Green(context.Namespace), aurora.Green(currentContext))
+			fmt.Printf("Listing pods with label %v in namespace %v in k8sContextDefinition %v.\n", aurora.Green(labelSelector), aurora.Green(k8sContextDefinition.Namespace), aurora.Green(currentContext))
 		} else {
-			fmt.Printf("Listing pods in namespace %v in context %v.\n", aurora.Green(context.Namespace), aurora.Green(currentContext))
+			fmt.Printf("Listing pods in namespace %v in k8sContextDefinition %v.\n", aurora.Green(k8sContextDefinition.Namespace), aurora.Green(currentContext))
 		}
 
-
-		podList, _ := kubernetes.KubernetesClientset().CoreV1().Pods(context.Namespace).List(v1.ListOptions{
+		podList, _ := kubernetes.KubernetesClientset().CoreV1().Pods(k8sContextDefinition.Namespace).List(context.Background(), v1.ListOptions{
 			LabelSelector: labelSelector,
 		})
 
