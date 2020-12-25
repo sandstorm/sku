@@ -10,6 +10,7 @@ require (
 	github.com/logrusorgru/aurora/v3 v3.0.0
 	github.com/spf13/cobra v1.1.1
 	github.com/tmc/keyring v0.0.0-20171121202319-839169085ae1
+	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.20.1
 	k8s.io/apimachinery v0.20.1
 	k8s.io/client-go v0.20.0

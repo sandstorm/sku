@@ -12,7 +12,7 @@ var completionCmd = &cobra.Command{
 
 Bash:
 
-$ source <(yourprogram completion bash)
+$ source <(sku completion bash)
 
 # To load completions for each session, execute once:
 Linux:
