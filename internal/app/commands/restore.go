@@ -36,4 +36,5 @@ func init() {
 	RootCmd.AddCommand(restoreCommand)
 	restoreCommand.AddCommand(restore.BuildCleanManifestsCommand())
 	restoreCommand.AddCommand(restore.BuildMariadbCommand())
+	restoreCommand.AddCommand(restore.BuildPersistentVolumesCommand())
 }

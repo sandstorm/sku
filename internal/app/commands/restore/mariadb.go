@@ -77,7 +77,7 @@ func BuildMariadbCommand() *cobra.Command {
 				fmt.Println("   in the namespace, so that we won't have problems with Network Policies etc.")
 				fmt.Println("")
 				fmt.Println()
-				podName := selectPod()
+				podName := selectPod("Please select a Pod to use as a proxy for connecting to the Database")
 
 				fmt.Println("2) Database connection parameters")
 				fmt.Println("")
@@ -170,7 +170,7 @@ func BuildMariadbCommand() *cobra.Command {
 				fmt.Println("   After doing an SQL dump, the database will be cleared, and the given data from the backup will be imported.")
 				fmt.Println("")
 
-				restoreBackupPath = path.Join(restoreBackupPath, time.Now().Format("01-02-2006-15:04:05")+"__"+k8sContextDefinition.Namespace)
+				restoreBackupPath = path.Join(restoreBackupPath, time.Now().Format("01-02-2006-15-04-05")+"__"+k8sContextDefinition.Namespace)
 				if err = os.MkdirAll(restoreBackupPath, os.ModePerm); err != nil {
 					fmt.Printf("%s could not create %s:\n    %v\n", aurora.Red("ERROR:"), restoreBackupPath, err)
 				}
@@ -297,7 +297,7 @@ func emptyDatabase(db *sql.DB, dbName string) error {
 	return nil
 }
 
-func selectPod() string {
+func selectPod(promptLabel string) string {
 	currentContext := kubernetes.KubernetesApiConfig().CurrentContext
 	k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 
@@ -312,7 +312,7 @@ func selectPod() string {
 	}
 
 	prompt := promptui.Select{
-		Label: aurora.Bold("Please select a Pod to use as a proxy for connecting to the Database"),
+		Label: aurora.Bold(promptLabel),
 		Items: podNames,
 	}
 

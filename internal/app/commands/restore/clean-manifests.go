@@ -104,7 +104,10 @@ NOTE: If you are deploying an operator, you MANUALLY need to apply the CustomRes
 				log.Fatal("filename must be given")
 			}
 
-			fileList := buildFileListToRead(filename)
+			fileList := buildFileListToRead(filename, func(fileName string) bool {
+				return strings.HasSuffix(fileName, ".yaml")
+			})
+
 			kubeFiles := readKubeFiles(fileList)
 			kubeFiles = filterKubeFiles(kubeFiles)
 			kubeFiles = addExtraGlobalKubeFiles(kubeFiles)
@@ -204,7 +207,9 @@ func addExtraGlobalKubeFiles(kubeFiles []*KubeFile) []*KubeFile {
 	for _, kubeFile := range kubeFiles {
 		if kubeFile.Parsed.Kind == "ServiceAccount" && kubeFile.Parsed.Metadata.Name != "default" {
 			// we have a non-default service account; let's check if there are global ClusterRoleBindings for this ServiceAccount
-			globalFileList := buildFileListToRead("../../GLOBAL/config") // TODO
+			globalFileList := buildFileListToRead("../../GLOBAL/config", func(fileName string) bool {
+				return strings.HasSuffix(fileName, ".yaml")
+			}) // TODO
 			globalKubeFiles := readKubeFiles(globalFileList)
 
 			if globalClusterRoleBinding, isFound := findFirst(globalKubeFiles, func(globalKubeFile *KubeFile) bool {
@@ -357,7 +362,7 @@ func cleanManifestsTypeSpecific(kubeFiles []*KubeFile) []*KubeFile {
 	return kubeFiles
 }
 
-func buildFileListToRead(filename string) []string {
+func buildFileListToRead(filename string, includeCb func(fileName string) bool) []string {
 	fileStats, err := os.Stat(filename)
 	if err != nil {
 		log.Fatalf("File %s not found: %s", filename, err)
@@ -374,9 +379,9 @@ func buildFileListToRead(filename string) []string {
 		defer directory.Close()
 
 		list, _ := directory.Readdirnames(0) // 0 to read all files and folders
-		for _, name := range list {
-			if strings.HasSuffix(name, ".yaml") {
-				filesToRead = append(filesToRead, filepath.Join(filename, name))
+		for _, fileName := range list {
+			if includeCb(fileName) {
+				filesToRead = append(filesToRead, filepath.Join(filename, fileName))
 			}
 		}
 	}
