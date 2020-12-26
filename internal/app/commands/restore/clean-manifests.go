@@ -81,8 +81,9 @@ NOTE: If you are deploying an operator, you MANUALLY need to apply the CustomRes
       fact, we don't even know if a Deployment is an "operator" or not, as this is a conceptual thing.
 `,
 		Example: `
-		# 1) CREATE THE NAMESPACE
+		# 1) CREATE THE NAMESPACE and switch into it
 		kubectl create namespace your-namespace-name
+		sku ns your-namespace-name
 
 		# 2) (optional) IMPORT A CUSTOM RESOURCE DEFINITION
 		sku backup-restore clean-manifests -f ../../GLOBAL/config/CustomResourceDefinition-.....yaml

@@ -35,4 +35,5 @@ See sub-commands for details.
 func init() {
 	RootCmd.AddCommand(restoreCommand)
 	restoreCommand.AddCommand(restore.BuildCleanManifestsCommand())
+	restoreCommand.AddCommand(restore.BuildMariadbCommand())
 }
