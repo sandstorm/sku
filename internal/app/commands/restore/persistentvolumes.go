@@ -95,6 +95,16 @@ func BuildPersistentVolumesCommand() *cobra.Command {
 							continue
 						}
 
+						persistentVolumesBackupFolders := buildFileListToRead(persistentVolumesBackupFolder, func(fileName string) bool {
+							return true
+						})
+
+						prompt := promptui.Select{
+							Label: aurora.Bold(fmt.Sprintf("Which backup should be replayed at %s?", volumeMount.MountPath)),
+							Items: persistentVolumesBackupFolders,
+						}
+						_, chosenPersistentVolumesBackup, err := prompt.Run()
+
 						command, err := wrapexec.RunWrappedCommand(
 							"    [kubectl cp] ",
 							"kubectl",
@@ -109,6 +119,17 @@ func BuildPersistentVolumesCommand() *cobra.Command {
 							return 1
 						}
 
+						confirmationPrompt := promptui.Prompt{
+							Label:     aurora.Bold("Clear the persistent volume and restore its backup?"),
+							IsConfirm: true,
+						}
+						_, err = confirmationPrompt.Run()
+						if err != nil {
+							fmt.Printf("user aborted.\n")
+							return 1
+						}
+
+						// TODO: delete dotfiles "." as well
 						command, err = wrapexec.RunWrappedCommand(
 							"    [kubectl exec] ",
 							"kubectl",
@@ -117,34 +138,26 @@ func BuildPersistentVolumesCommand() *cobra.Command {
 							"-c",
 							container.Name,
 							"--",
-							"rm",
-							"-Rf",
-							fmt.Sprintf("%s/{,.[!.],..?}*", volumeMount.MountPath),
+							"/bin/sh",
+							"-c",
+							fmt.Sprintf("rm -Rf %s/*", volumeMount.MountPath),
 						)
 						if err != nil {
 							fmt.Printf("%s could not clear persistent volume contents:\n    Command: %s\n    Error: %v\n", aurora.Red("ERROR:"), command.String(), err)
 							return 1
 						}
 
-						persistentVolumesBackupFolders := buildFileListToRead(persistentVolumesBackupFolder, func(fileName string) bool {
-							return true
-						})
-
-						prompt := promptui.Select{
-							Label: aurora.Bold(fmt.Sprintf("Which backup should be replayed at %s?", volumeMount.MountPath)),
-							Items: persistentVolumesBackupFolders,
-						}
-
-						_, chosenPersistentVolumesBackup, err := prompt.Run()
-
 						command, err = wrapexec.RunWrappedCommand(
 							"    [kubectl cp] ",
-							"kubectl",
-							"cp",
-							fmt.Sprintf("%s/", chosenPersistentVolumesBackup),
-							fmt.Sprintf("%s:%s/", podName, volumeMount.MountPath),
+							"/bin/bash",
 							"-c",
-							container.Name,
+							fmt.Sprintf(
+								"tar cf - -C %s . | kubectl exec -i --container=%s %s -- tar xf - -C %s",
+								chosenPersistentVolumesBackup,
+								container.Name,
+								podName,
+								volumeMount.MountPath,
+							),
 						)
 						if err != nil {
 							fmt.Printf("%s could not restore persistent volume contents:\n    Command: %s\n    Error: %v\n", aurora.Red("ERROR:"), command.String(), err)
