@@ -39,6 +39,13 @@ List and switch kubernetes namespaces.`,
 	sku ns [namespaceName]
 `,
 	Args: cobra.MaximumNArgs(1),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		namespaceList, _ := kubernetes.KubernetesClientset().CoreV1().Namespaces().List(context.Background(), meta_v1.ListOptions{})
+		return kubernetes.NamespacesToString(namespaceList), cobra.ShellCompDirectiveNoFileComp
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		namespaceList, _ := kubernetes.KubernetesClientset().CoreV1().Namespaces().List(context.Background(), meta_v1.ListOptions{})
 

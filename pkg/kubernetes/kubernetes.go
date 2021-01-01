@@ -138,6 +138,15 @@ func EnsureNamespaceExists(namespace string, namespaceList *v1.NamespaceList) {
 	}
 }
 
+func NamespacesToString(namespaceList *v1.NamespaceList) []string {
+	namespaces := make([]string, 0, len(namespaceList.Items))
+	for _, ns := range namespaceList.Items {
+		namespaces = append(namespaces, ns.Name)
+	}
+	return namespaces
+}
+
+
 func PrintExistingNamespaces(namespaceList *v1.NamespaceList) {
 	currentContext := KubernetesApiConfig().CurrentContext
 	context := KubernetesApiConfig().Contexts[currentContext]
