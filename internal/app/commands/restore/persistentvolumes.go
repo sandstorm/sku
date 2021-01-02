@@ -68,7 +68,7 @@ func BuildPersistentVolumesCommand() *cobra.Command {
 				fmt.Println("   We will connect to the Persistent Volumes via a running Pod.")
 				fmt.Println("")
 				fmt.Println()
-				podName := selectPod("Please select a Pod whose persistent volumes to restore")
+				podName := kubernetes.SelectPod("Please select a Pod whose persistent volumes to restore")
 
 				// query for running pods in current namespace
 				pod, _ := kubernetes.KubernetesClientset().CoreV1().Pods(k8sContextDefinition.Namespace).Get(context.Background(), podName, metav1.GetOptions{})

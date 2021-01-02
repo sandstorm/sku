@@ -1,23 +1,18 @@
 package restore
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
-	"github.com/dop251/goja"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/logrusorgru/aurora"
 	"github.com/manifoldco/promptui"
-	"github.com/phayes/freeport"
+	"github.com/sandstorm/sku/pkg/database"
 	"github.com/sandstorm/sku/pkg/kubernetes"
 	"github.com/spf13/cobra"
-	clientV1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -71,94 +66,18 @@ func BuildMariadbCommand() *cobra.Command {
 				currentContext := kubernetes.KubernetesApiConfig().CurrentContext
 				k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 
-				fmt.Printf("1) K8S namespace %s in context %s\n", aurora.Green(k8sContextDefinition.Namespace), aurora.Green(currentContext))
-				fmt.Println("")
-				fmt.Println("   We will connect to the database by adding a Debug Container to an already-running Pod")
-				fmt.Println("   in the namespace, so that we won't have problems with Network Policies etc.")
-				fmt.Println("")
-				fmt.Println()
-				podName := selectPod("Please select a Pod to use as a proxy for connecting to the Database")
+				dbHost = kubernetes.EvalScriptParameter(dbHost)
+				dbName = kubernetes.EvalScriptParameter(dbName)
+				dbUser = kubernetes.EvalScriptParameter(dbUser)
+				dbPassword = kubernetes.EvalScriptParameter(dbPassword)
 
-				fmt.Println("2) Database connection parameters")
-				fmt.Println("")
-				fmt.Printf("   We will use the following database credentials to connect from within the Pod %s:\n", aurora.Green(podName))
-				fmt.Println("")
-				fmt.Println("")
-
-				dbHost = execScriptParameter(dbHost)
-				dbName = execScriptParameter(dbName)
-				dbUser = execScriptParameter(dbUser)
-				dbPassword = execScriptParameter(dbPassword)
-				fmt.Printf("  - DB Host: %s\n", aurora.Green(dbHost))
-				fmt.Printf("  - DB Name: %s\n", aurora.Green(dbName))
-				fmt.Printf("  - DB User: %s\n", aurora.Green(dbUser))
-				fmt.Printf("  - DB Password length: %s\n", aurora.Green(strconv.Itoa(len(dbPassword))))
-
-				//=================================
-				// Connect to DB via Proxy Pod
-				//=================================
-				fmt.Println("3) Trying to connect and creating a backup")
-				fmt.Println("")
-				kubectlDebug := exec.Command(
-					"kubectl",
-					"debug",
-					podName,
-					"--image=alpine/socat",
-					"--image-pull-policy=Always",
-					"--arguments-only=true",
-					"--",
-					// here follow the socat arguments
-					"tcp-listen:3306,fork,reuseaddr",
-					fmt.Sprintf("tcp-connect:%s:3306", dbHost),
-				)
-				err = kubectlDebug.Run()
+				localDbProxyPort, db, kubectlPortForward, err :=  database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword)
 				if err != nil {
-					fmt.Printf("%s could not run kubectl debug:\n    kubectl debug %v\n    %v\n", aurora.Red("ERROR:"), strings.Join(kubectlDebug.Args, " "), err)
-					return 1
-				}
-				fmt.Println("  - Started kubectl debug")
-
-				localDbProxyPort, err := freeport.GetFreePort()
-				if err != nil {
-					fmt.Printf("%s did not find a free port:\n    %v\n", aurora.Red("ERROR:"), err)
-					return 1
-				}
-
-				kubectlPortForward := exec.Command(
-					"kubectl",
-					"port-forward",
-					fmt.Sprintf("pod/%s", podName),
-					fmt.Sprintf("%d:3306", localDbProxyPort),
-				)
-				kubectlPortForward.Stdout = os.Stdout
-				kubectlPortForward.Stderr = os.Stderr
-
-				err = kubectlPortForward.Start()
-				if err != nil {
-					fmt.Printf("%s could not run kubectl port-forward:\n    kubectl port-forward %v\n    %v\n", aurora.Red("ERROR:"), strings.Join(kubectlPortForward.Args, " "), err)
+					fmt.Println(err)
 					return 1
 				}
 				defer kubectlPortForward.Process.Kill()
-				fmt.Println("  - Started kubectl port-forward")
-
-				db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(127.0.0.1:%d)/%s", dbUser, dbPassword, localDbProxyPort, dbName))
-				if err != nil {
-					fmt.Printf("%s mysql connection could not be created:\n    %v\n", aurora.Red("ERROR:"), err)
-					return 1
-				}
 				defer db.Close()
-
-				waitTime, _ := time.ParseDuration("1s")
-				for {
-					err = db.Ping()
-					if err == nil {
-						break
-					}
-
-					time.Sleep(waitTime)
-					fmt.Println("- Waiting for MySQL to be available")
-				}
-				fmt.Println("- Got SQL connection")
 
 				//=================================
 				// Create SQL Backup
@@ -297,85 +216,4 @@ func emptyDatabase(db *sql.DB, dbName string) error {
 	return nil
 }
 
-func selectPod(promptLabel string) string {
-	currentContext := kubernetes.KubernetesApiConfig().CurrentContext
-	k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 
-	// query for running pods in current namespace
-	podList, _ := kubernetes.KubernetesClientset().CoreV1().Pods(k8sContextDefinition.Namespace).List(context.Background(), metav1.ListOptions{})
-
-	podNames := make([]string, 0, len(podList.Items))
-	for _, pod := range podList.Items {
-		if pod.Status.Phase == clientV1.PodRunning {
-			podNames = append(podNames, pod.Name)
-		}
-	}
-
-	prompt := promptui.Select{
-		Label: aurora.Bold(promptLabel),
-		Items: podNames,
-	}
-
-	_, result, err := prompt.Run()
-
-	if err != nil {
-		fmt.Printf("%s prompt failed:\n    %v\n", aurora.Red("ERROR:"), err)
-		// TODO: get rid of os.Exit here (breaks the outer goroutines)
-		os.Exit(1)
-	}
-
-	return result
-}
-
-func execScriptParameter(parameter string) string {
-	if strings.HasPrefix(parameter, "eval:") {
-		vm := goja.New()
-		vm.Set("secret", func(secretName string) map[string]string {
-			currentContext := kubernetes.KubernetesApiConfig().CurrentContext
-			k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
-			secret, err := kubernetes.KubernetesClientset().CoreV1().Secrets(k8sContextDefinition.Namespace).Get(context.Background(), secretName, metav1.GetOptions{})
-			if err != nil {
-				fmt.Printf("%s Secret %s could not be fetched (evaluating %s):\n    %s\n", aurora.Red("ERROR:"), aurora.Bold(secretName), aurora.Bold(parameter), err)
-				// TODO: get rid of os.Exit here (breaks the outer goroutines)
-				os.Exit(1)
-			}
-
-			converted := make(map[string]string, len(secret.Data))
-			for k, v := range secret.Data {
-				converted[k] = string(v)
-			}
-			return converted
-		})
-
-		vm.Set("configmap", func(configmapName string) map[string]string {
-			currentContext := kubernetes.KubernetesApiConfig().CurrentContext
-			k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
-			configMap, err := kubernetes.KubernetesClientset().CoreV1().ConfigMaps(k8sContextDefinition.Namespace).Get(context.Background(), configmapName, metav1.GetOptions{})
-			if err != nil {
-				fmt.Printf("%s Config Map %s could not be fetched (evaluating %s):\n    %s\n", aurora.Red("ERROR:"), aurora.Bold(configmapName), aurora.Bold(parameter), err)
-				// TODO: get rid of os.Exit here (breaks the outer goroutines)
-				os.Exit(1)
-			}
-
-			return configMap.Data
-		})
-
-		v, err := vm.RunString(parameter[5:])
-		if err != nil {
-			fmt.Printf("%s Could not evaluate %s:\n    %s\n", aurora.Red("ERROR:"), aurora.Bold(parameter), err)
-			// TODO: get rid of os.Exit here (breaks the outer goroutines)
-			os.Exit(1)
-		}
-
-		converted, isOk := v.Export().(string)
-		if !isOk {
-			fmt.Printf("%s Could not convert %s:\n    Value: %+v\n", aurora.Red("ERROR:"), aurora.Bold(parameter), v)
-			// TODO: get rid of os.Exit here (breaks the outer goroutines)
-			os.Exit(1)
-		}
-		return converted
-	} else {
-		return parameter
-	}
-
-}
