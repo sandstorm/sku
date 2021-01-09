@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string) (int, *sql.DB, *exec.Cmd, error) {
+func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string, dbPort int) (int, *sql.DB, *exec.Cmd, error) {
 	currentContext := kubernetes.KubernetesApiConfig().CurrentContext
 	k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 
@@ -50,8 +50,8 @@ func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string) (in
 		"--arguments-only=true",
 		"--",
 		// here follow the socat arguments
-		"tcp-listen:3306,fork,reuseaddr",
-		fmt.Sprintf("tcp-connect:%s:3306", dbHost),
+		fmt.Sprintf("tcp-listen:%d,fork,reuseaddr", dbPort),
+		fmt.Sprintf("tcp-connect:%s:%d", dbHost, dbPort),
 	)
 	err := kubectlDebug.Run()
 	if err != nil {
@@ -68,7 +68,7 @@ func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string) (in
 		"kubectl",
 		"port-forward",
 		fmt.Sprintf("pod/%s", proxyPodName),
-		fmt.Sprintf("%d:3306", localDbProxyPort),
+		fmt.Sprintf("%d:%d", localDbProxyPort, dbPort),
 	)
 	kubectlPortForward.Stdout = os.Stdout
 	kubectlPortForward.Stderr = os.Stderr

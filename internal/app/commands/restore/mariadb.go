@@ -71,7 +71,7 @@ func BuildMariadbCommand() *cobra.Command {
 				dbUser = kubernetes.EvalScriptParameter(dbUser)
 				dbPassword = kubernetes.EvalScriptParameter(dbPassword)
 
-				localDbProxyPort, db, kubectlPortForward, err :=  database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword)
+				localDbProxyPort, db, kubectlPortForward, err :=  database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 3306)
 				if err != nil {
 					fmt.Println(err)
 					return 1

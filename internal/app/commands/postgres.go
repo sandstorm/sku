@@ -27,26 +27,25 @@ import (
 	"syscall"
 )
 
-func BuildMysqlCommand() *cobra.Command {
+func BuildPostgresCommand() *cobra.Command {
 	dbHost := ""
 	dbName := ""
 	dbUser := ""
 	dbPassword := ""
 
-	var mysqlCommand = &cobra.Command{
-		Use:                   "mysql [cli|mycli|sequelace|beekeeper] (extra-params)",
+	var postgresCommand = &cobra.Command{
+		Use:                   "postgres [cli|pgcli|beekeeper] (extra-params)",
 		DisableFlagsInUseLine: true,
-		ValidArgs:             []string{"cli", "mycli", "sequelace", "beekeeper"},
+		ValidArgs:             []string{"cli", "pgcli", "beekeeper"},
 		Args:                  cobra.MinimumNArgs(1),
-		Short:                 "Build a mysql connection and enter it via one of the given tools",
+		Short:                 "Build a postgres connection and enter it via one of the given tools",
 		Long: `
 drop into a MySQL CLI to the given target
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			allowedArgs := map[string]bool{
 				"cli":       true,
-				"mycli":     true,
-				"sequelace": true,
+				"pgcli":     true,
 				"beekeeper": true,
 			}
 			if !allowedArgs[args[0]] {
@@ -59,7 +58,7 @@ drop into a MySQL CLI to the given target
 			dbUser = kubernetes.EvalScriptParameter(dbUser)
 			dbPassword = kubernetes.EvalScriptParameter(dbPassword)
 
-			localDbProxyPort, db, kubectlPortForward, err := database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 3306)
+			localDbProxyPort, db, kubectlPortForward, err := database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 5432)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -69,67 +68,48 @@ drop into a MySQL CLI to the given target
 
 			switch args[0] {
 			case "cli":
-				mysqlArgs := []string{
+				psqlArgs := []string{
 					"--host=127.0.0.1",
 					fmt.Sprintf("--port=%d", localDbProxyPort),
-					fmt.Sprintf("--user=%s", dbUser),
-					fmt.Sprintf("--password=%s", dbPassword),
+					fmt.Sprintf("--username=%s", dbUser),
 					dbName,
 				}
-				mysqlArgs = append(mysqlArgs, args[1:]...)
+				psqlArgs = append(psqlArgs, args[1:]...)
 
-				mysql := exec.Command(
-					"mysql",
-					mysqlArgs...,
+				psql := exec.Command(
+					"psql",
+					psqlArgs...,
 				)
-				mysql.Stdout = os.Stdout
-				mysql.Stderr = os.Stderr
-				mysql.Stdin = os.Stdin
+				psql.Env = append(os.Environ(),
+					fmt.Sprintf("PGPASSWORD=%s", dbPassword),
+				)
+				psql.Stdout = os.Stdout
+				psql.Stderr = os.Stderr
+				psql.Stdin = os.Stdin
 
-				mysql.Run()
+				psql.Run()
 
 				break
 
-			case "mycli":
-				mycliArgs := []string{
+			case "pgcli":
+				pgcliArgs := []string{
 					"--host", "127.0.0.1",
 					"--port", strconv.Itoa(localDbProxyPort),
 					"--user", dbUser,
 					"--password", dbPassword,
 					dbName,
 				}
-				mycliArgs = append(mycliArgs, args[1:]...)
+				pgcliArgs = append(pgcliArgs, args[1:]...)
 
 				mycli := exec.Command(
-					"mycli",
-					mycliArgs...,
+					"pgcli",
+					pgcliArgs...,
 				)
 				mycli.Stdout = os.Stdout
 				mycli.Stderr = os.Stderr
 				mycli.Stdin = os.Stdin
 
 				mycli.Run()
-				break
-
-			case "sequelace":
-				openSequelAce := exec.Command(
-					"open",
-					fmt.Sprintf("mysql://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName),
-					"-a", "Sequel Ace",
-				)
-				openSequelAce.Stdout = os.Stdout
-				openSequelAce.Stderr = os.Stderr
-				openSequelAce.Stdin = os.Stdin
-
-				openSequelAce.Run()
-
-				fmt.Println(aurora.Bold("Keep this shell open as long as you want the DB connection to survive."))
-				fmt.Println(aurora.Bold("Press Ctrl-C to close."))
-
-				c := make(chan os.Signal)
-				signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-				<-c
-
 				break
 
 			case "beekeeper":
@@ -144,7 +124,7 @@ drop into a MySQL CLI to the given target
 				openBeekeeper.Run()
 
 				fmt.Println(aurora.Bold("For Beekeeper Studio, you need to paste the following connection string:"))
-				fmt.Println(aurora.Green(fmt.Sprintf("mysql://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName)))
+				fmt.Println(aurora.Green(fmt.Sprintf("postgres://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName)))
 				fmt.Println(aurora.Bold("Keep this shell open as long as you want the DB connection to survive."))
 				fmt.Println(aurora.Bold("Press Ctrl-C to close."))
 
@@ -157,16 +137,14 @@ drop into a MySQL CLI to the given target
 		},
 	}
 
-	mysqlCommand.Flags().StringVarP(&dbHost, "dbHost", "", "eval:configmap('db').DB_HOST", "filename that contains the configuration to apply")
-	mysqlCommand.Flags().StringVarP(&dbName, "dbName", "", "eval:configmap('db').DB_NAME", "filename that contains the configuration to apply")
-	mysqlCommand.Flags().StringVarP(&dbUser, "dbUser", "", "eval:configmap('db').DB_USER", "filename that contains the configuration to apply")
-	mysqlCommand.Flags().StringVarP(&dbPassword, "dbPassword", "", "eval:secret('db').DB_PASSWORD", "filename that contains the configuration to apply")
+	postgresCommand.Flags().StringVarP(&dbHost, "dbHost", "", "eval:configmap('db').DB_HOST", "filename that contains the configuration to apply")
+	postgresCommand.Flags().StringVarP(&dbName, "dbName", "", "eval:configmap('db').DB_NAME", "filename that contains the configuration to apply")
+	postgresCommand.Flags().StringVarP(&dbUser, "dbUser", "", "eval:configmap('db').DB_USER", "filename that contains the configuration to apply")
+	postgresCommand.Flags().StringVarP(&dbPassword, "dbPassword", "", "eval:secret('db').DB_PASSWORD", "filename that contains the configuration to apply")
 
-	return mysqlCommand
+	return postgresCommand
 }
 
-var mysqlCommand = &cobra.Command{}
-
 func init() {
-	RootCmd.AddCommand(BuildMysqlCommand())
+	RootCmd.AddCommand(BuildPostgresCommand())
 }
