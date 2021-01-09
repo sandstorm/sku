@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"os/user"
 	"syscall"
 )
 
@@ -96,7 +97,12 @@ On first run, you'll get an error about untrusted software. '
 		fmt.Printf(Colorize("!!! In a few seconds, you'll be asked to enter the decryption key.\n", YellowFg).String())
 		fmt.Printf(Colorize("    Check your password manager and search for Borgbackup.\n", YellowFg).String())
 
-		borgCommand := exec.Command("/usr/local/bin/borg", "--debug", "mount", "--last", "1", "--strip-components", "1", borgbackupRepoUrl, backupMountDir)
+		sysUser, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+
+		borgCommand := exec.Command("/usr/local/bin/borg", "mount", "-o", "uid="+sysUser.Uid, "--last", "1", "--strip-components", "1", borgbackupRepoUrl, backupMountDir)
 		env := os.Environ()
 		borgCommand.Env = append(env, fmt.Sprintf(`BORG_RSH=ssh -i %s`, borgbackupSshKeyTempFile.Name()))
 		borgCommand.Stdout = os.Stdout
