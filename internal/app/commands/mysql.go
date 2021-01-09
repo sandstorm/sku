@@ -15,19 +15,158 @@
 package commands
 
 import (
-	"github.com/sandstorm/sku/internal/app/commands/mysql"
+	"fmt"
+	"github.com/logrusorgru/aurora/v3"
+	"github.com/sandstorm/sku/pkg/database"
+	"github.com/sandstorm/sku/pkg/kubernetes"
 	"github.com/spf13/cobra"
+	"os"
+	"os/exec"
+	"os/signal"
+	"strconv"
+	"syscall"
 )
 
-var mysqlCommand = &cobra.Command{
-	Use:   "mysql",
-	Short: "Build a mysql connection",
-	Long: `
-See sub-commands for details.
+func BuildMysqlCommand() *cobra.Command {
+	dbHost := ""
+	dbName := ""
+	dbUser := ""
+	dbPassword := ""
+
+	var mysqlCommand = &cobra.Command{
+		Use:                   "mysql [cli|mycli|sequelace|beekeeper] (extra-params)",
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"cli", "mycli", "sequelace", "beekeeper"},
+		Args:                  cobra.MinimumNArgs(1),
+		Short:                 "Build a mysql connection and enter it via one of the given tools",
+		Long: `
+drop into a MySQL CLI to the given target
 `,
+		Run: func(cmd *cobra.Command, args []string) {
+			allowedArgs := map[string]bool{
+				"cli":       true,
+				"mycli":     true,
+				"sequelace": true,
+				"beekeeper": true,
+			}
+			if !allowedArgs[args[0]] {
+				fmt.Printf("The tool %s is not supported. specify cli or mycli instead.\n", args[0])
+				os.Exit(1)
+			}
+
+			dbHost = kubernetes.EvalScriptParameter(dbHost)
+			dbName = kubernetes.EvalScriptParameter(dbName)
+			dbUser = kubernetes.EvalScriptParameter(dbUser)
+			dbPassword = kubernetes.EvalScriptParameter(dbPassword)
+
+			localDbProxyPort, db, kubectlPortForward, err := database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			defer kubectlPortForward.Process.Kill()
+			defer db.Close()
+
+			switch args[0] {
+			case "cli":
+				mysqlArgs := []string{
+					"--host=127.0.0.1",
+					fmt.Sprintf("--port=%d", localDbProxyPort),
+					fmt.Sprintf("--user=%s", dbUser),
+					fmt.Sprintf("--password=%s", dbPassword),
+					dbName,
+				}
+				mysqlArgs = append(mysqlArgs, args[1:]...)
+
+				mysql := exec.Command(
+					"mysql",
+					mysqlArgs...,
+				)
+				mysql.Stdout = os.Stdout
+				mysql.Stderr = os.Stderr
+				mysql.Stdin = os.Stdin
+
+				mysql.Run()
+
+				break
+
+			case "mycli":
+				mycliArgs := []string{
+					"--host", "127.0.0.1",
+					"--port", strconv.Itoa(localDbProxyPort),
+					"--user", dbUser,
+					"--password", dbPassword,
+					dbName,
+				}
+				mycliArgs = append(mycliArgs, args[1:]...)
+
+				mycli := exec.Command(
+					"mycli",
+					mycliArgs...,
+				)
+				mycli.Stdout = os.Stdout
+				mycli.Stderr = os.Stderr
+				mycli.Stdin = os.Stdin
+
+				mycli.Run()
+				break
+
+			case "sequelace":
+				openSequelAce := exec.Command(
+					"open",
+					fmt.Sprintf("mysql://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName),
+					"-a", "Sequel Ace",
+				)
+				openSequelAce.Stdout = os.Stdout
+				openSequelAce.Stderr = os.Stderr
+				openSequelAce.Stdin = os.Stdin
+
+				openSequelAce.Run()
+
+				fmt.Println(aurora.Bold("Keep this shell open as long as you want the DB connection to survive."))
+				fmt.Println(aurora.Bold("Press Ctrl-C to close."))
+
+				c := make(chan os.Signal)
+				signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+				<-c
+
+				break
+
+			case "beekeeper":
+				openBeekeeper := exec.Command(
+					"open",
+					"/Applications/Beekeeper Studio.app",
+				)
+				openBeekeeper.Stdout = os.Stdout
+				openBeekeeper.Stderr = os.Stderr
+				openBeekeeper.Stdin = os.Stdin
+
+				openBeekeeper.Run()
+
+				fmt.Println(aurora.Bold("For Beekeeper Studio, you need to paste the following connection string:"))
+				fmt.Println(aurora.Green(fmt.Sprintf("mysql://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName)))
+				fmt.Println(aurora.Bold("Keep this shell open as long as you want the DB connection to survive."))
+				fmt.Println(aurora.Bold("Press Ctrl-C to close."))
+
+				c := make(chan os.Signal)
+				signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+				<-c
+
+				break
+			}
+		},
+	}
+
+	mysqlCommand.Flags().StringVarP(&dbHost, "dbHost", "", "eval:configmap('db').DB_HOST", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbName, "dbName", "", "eval:configmap('db').DB_NAME", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbUser, "dbUser", "", "eval:configmap('db').DB_USER", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbPassword, "dbPassword", "", "eval:secret('db').DB_PASSWORD", "filename that contains the configuration to apply")
+
+	return mysqlCommand
 }
 
+var mysqlCommand = &cobra.Command{}
+
 func init() {
-	RootCmd.AddCommand(mysqlCommand)
-	mysqlCommand.AddCommand(mysql.BuildCliCommand())
+	RootCmd.AddCommand(BuildMysqlCommand())
 }

@@ -39,7 +39,7 @@ func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string) (in
 	//=================================
 	// Connect to DB via Proxy Pod
 	//=================================
-	fmt.Println("3) Trying to connect and creating a backup")
+	fmt.Println("3) Trying to connect...")
 	fmt.Println("")
 	kubectlDebug := exec.Command(
 		"kubectl",
