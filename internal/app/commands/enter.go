@@ -91,7 +91,8 @@ selector.
 
 		fmt.Printf("Connecting to %v in %v:\n", aurora.Green(podList.Items[i].Name), aurora.Green(currentContext))
 
-		syscall.Exec("/usr/local/bin/kubectl", []string{"kubectl", "exec", "-it", podList.Items[i].Name, "/bin/bash"}, os.Environ())
+		// enter bash or sh
+		syscall.Exec("/usr/local/bin/kubectl", []string{"kubectl", "exec", "-it", podList.Items[i].Name, "--", "/bin/sh", "-c", "[ -e /bin/bash ] && exec /bin/bash || exec /bin/sh"}, os.Environ())
 	},
 }
 

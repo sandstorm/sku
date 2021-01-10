@@ -10,6 +10,7 @@ builds:
     main: ./cmd/sku/sku.go
     goos:
       - darwin
+      - linux
     goarch:
       - amd64
   -
@@ -19,6 +20,7 @@ builds:
     binary: "sku_plugins/sandstorm.so"
     goos:
       - darwin
+      - linux
     goarch:
       - amd64
 

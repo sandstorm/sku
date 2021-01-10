@@ -16,11 +16,10 @@ package commands
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
 	"github.com/logrusorgru/aurora"
-	"k8s.io/client-go/tools/clientcmd"
 	"github.com/sandstorm/sku/pkg/kubernetes"
+	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // contextCmd represents the context command
@@ -37,6 +36,18 @@ This command allows to switch between different configured Kubernetes clusters.`
 	sku context [contextName]
 `,
 	Args: cobra.MaximumNArgs(1),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		contexts := kubernetes.KubernetesApiConfig().Contexts
+		contextNames := make([]string, 0, len(contexts))
+		for context := range contexts {
+			contextNames = append(contextNames, context)
+		}
+		return contextNames, cobra.ShellCompDirectiveNoFileComp
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Printf("Contexts: \n")
@@ -53,7 +64,6 @@ This command allows to switch between different configured Kubernetes clusters.`
 		}
 	},
 }
-
 
 func init() {
 	RootCmd.AddCommand(contextCmd)

@@ -7,8 +7,10 @@ import (
 
 var completionCmd = &cobra.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",
-	Short: "Generate completion script",
-	Long: `To load completions:
+	Short: "Generate completion script for common shells",
+	Long: `Generate Autocomplete Scripts for common shells for the SKU tool
+
+To load completions:
 
 Bash:
 
