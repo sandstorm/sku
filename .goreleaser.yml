@@ -20,7 +20,6 @@ builds:
     binary: "sku_plugins/sandstorm.so"
     goos:
       - darwin
-      - linux
     goarch:
       - amd64
 
