@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/logrusorgru/aurora/v3"
 	"github.com/phayes/freeport"
 	"github.com/sandstorm/sku/pkg/kubernetes"
@@ -13,7 +15,20 @@ import (
 	"time"
 )
 
-func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string, dbPort int) (int, *sql.DB, *exec.Cmd, error) {
+func MysqlDatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string) (int, *sql.DB, *exec.Cmd, error) {
+	return databaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 3306, func(localDbProxyPort int) (*sql.DB, error) {
+		return sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(127.0.0.1:%d)/%s", dbUser, dbPassword, localDbProxyPort, dbName))
+	})
+}
+
+func PostgresDatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string) (int, *sql.DB, *exec.Cmd, error) {
+	// see https://github.com/jackc/pgx/blob/master/stdlib/sql.go
+	return databaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 5432, func(localDbProxyPort int) (*sql.DB, error) {
+		return sql.Open("pgx", fmt.Sprintf("postgres://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName))
+	})
+}
+
+func databaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string, dbPort int, sqlConnectionFactory func(localDbProxyPort int) (*sql.DB, error)) (int, *sql.DB, *exec.Cmd, error) {
 	currentContext := kubernetes.KubernetesApiConfig().CurrentContext
 	k8sContextDefinition := kubernetes.KubernetesApiConfig().Contexts[currentContext]
 
@@ -79,10 +94,10 @@ func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string, dbP
 	}
 	fmt.Println("  - Started kubectl port-forward")
 
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(127.0.0.1:%d)/%s", dbUser, dbPassword, localDbProxyPort, dbName))
+	db, err := sqlConnectionFactory(localDbProxyPort)
 	if err != nil {
 		kubectlPortForward.Process.Kill()
-		return 0, nil, nil, fmt.Errorf("%s mysql connection could not be created:\n    %v\n", aurora.Red("ERROR:"), err)
+		return 0, nil, nil, fmt.Errorf("%s connection could not be created:\n    %v\n", aurora.Red("ERROR:"), err)
 	}
 
 	waitTime, _ := time.ParseDuration("1s")
@@ -93,7 +108,7 @@ func DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword string, dbP
 		}
 
 		time.Sleep(waitTime)
-		fmt.Println("- Waiting for MySQL to be available")
+		fmt.Println("- Waiting for Database to be available")
 	}
 	fmt.Println("- Got SQL connection")
 

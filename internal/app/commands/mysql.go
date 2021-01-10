@@ -59,7 +59,7 @@ drop into a MySQL CLI to the given target
 			dbUser = kubernetes.EvalScriptParameter(dbUser)
 			dbPassword = kubernetes.EvalScriptParameter(dbPassword)
 
-			localDbProxyPort, db, kubectlPortForward, err := database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 3306)
+			localDbProxyPort, db, kubectlPortForward, err := database.MysqlDatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)

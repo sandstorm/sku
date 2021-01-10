@@ -9,6 +9,7 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/imdario/mergo v0.3.11 // indirect
+	github.com/jackc/pgx/v4 v4.10.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/logrusorgru/aurora v0.0.0-20190428105938-cea283e61946
 	github.com/logrusorgru/aurora/v3 v3.0.0

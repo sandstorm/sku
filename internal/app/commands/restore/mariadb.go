@@ -3,7 +3,6 @@ package restore
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/logrusorgru/aurora"
 	"github.com/manifoldco/promptui"
 	"github.com/sandstorm/sku/pkg/database"
@@ -71,7 +70,7 @@ func BuildMariadbCommand() *cobra.Command {
 				dbUser = kubernetes.EvalScriptParameter(dbUser)
 				dbPassword = kubernetes.EvalScriptParameter(dbPassword)
 
-				localDbProxyPort, db, kubectlPortForward, err :=  database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 3306)
+				localDbProxyPort, db, kubectlPortForward, err := database.MysqlDatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword)
 				if err != nil {
 					fmt.Println(err)
 					return 1
@@ -215,5 +214,3 @@ func emptyDatabase(db *sql.DB, dbName string) error {
 
 	return nil
 }
-
-

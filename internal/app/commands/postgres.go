@@ -58,7 +58,7 @@ drop into a MySQL CLI to the given target
 			dbUser = kubernetes.EvalScriptParameter(dbUser)
 			dbPassword = kubernetes.EvalScriptParameter(dbPassword)
 
-			localDbProxyPort, db, kubectlPortForward, err := database.DatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword, 5432)
+			localDbProxyPort, db, kubectlPortForward, err := database.PostgresDatabaseConnectionThroughPod(dbHost, dbName, dbUser, dbPassword)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -96,20 +96,23 @@ drop into a MySQL CLI to the given target
 					"--host", "127.0.0.1",
 					"--port", strconv.Itoa(localDbProxyPort),
 					"--user", dbUser,
-					"--password", dbPassword,
 					dbName,
 				}
 				pgcliArgs = append(pgcliArgs, args[1:]...)
 
-				mycli := exec.Command(
+				pgcli := exec.Command(
 					"pgcli",
 					pgcliArgs...,
 				)
-				mycli.Stdout = os.Stdout
-				mycli.Stderr = os.Stderr
-				mycli.Stdin = os.Stdin
+				pgcli.Env = append(os.Environ(),
+					fmt.Sprintf("PGPASSWORD=%s", dbPassword),
+				)
 
-				mycli.Run()
+				pgcli.Stdout = os.Stdout
+				pgcli.Stderr = os.Stderr
+				pgcli.Stdin = os.Stdin
+
+				pgcli.Run()
 				break
 
 			case "beekeeper":
