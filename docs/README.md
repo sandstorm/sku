@@ -18,6 +18,14 @@ brew install sandstorm/tap/sku
 
 Then, use `sku help` to get inline help, or e.g. run `sku ns` to list all namespaces in your current Kubernetes cluster.
 
+## Updating
+
+To update via Homebrew, run the following command:
+
+```bash
+brew upgrade sandstorm/tap/sku
+```
+
 ## Features
 
 The following commands are supported:
