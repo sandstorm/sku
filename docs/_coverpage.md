@@ -8,5 +8,5 @@
 - <b>NEW</b>: Restore Manifests, Databases, Persistent Volumes
 
 [Install](#installation)
-[GitHub](https://github.com/docsifyjs/docsify/)
-[Get Started](#docsify)
+[GitHub](https://github.com/sandstorm/sku/)
+[Features](#features)
