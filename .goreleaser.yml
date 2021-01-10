@@ -10,7 +10,6 @@ builds:
     main: ./cmd/sku/sku.go
     goos:
       - darwin
-      - linux
     goarch:
       - amd64
   -
