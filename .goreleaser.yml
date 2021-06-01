@@ -44,7 +44,7 @@ brews:
   -
     name: sku
 
-    github:
+    tap:
       owner: sandstorm
       name: homebrew-tap
 
