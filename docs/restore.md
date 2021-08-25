@@ -5,10 +5,10 @@
 > know what you need.
 
 ## Cluster Setup
-* Namespace `backup-job-downloads` in a rancher project where every user can read secrets
-* In this namespace secret `backup-readonly-credentials` containing the following key/value pairs:
+* Create Namespace `backup-job-downloads` in a rancher project where every user can read secrets
+* In this namespace create a secret `backup-readonly-credentials` containing the following key/value pairs:
     * id_rsa -> the ssh key, registered on borgbase.com
-    * for every node in the cluster the borgbase repository url in the format repo_url_<node name>
+    * for every node in the cluster add a key/value-pair for the borgbase repository url where the key format is repo_url_<node name>
 
 ## Local Setup (MacOS)
 * Install osx fuse by
@@ -31,7 +31,7 @@ Done in 2 Steps:
 2) restore the desired data (config, volumes, databases) with the commands in sku restore
 
 ### Mount borgbase backup
-* Prerequesites: see Local Setup
+* Prerequisites: see Local Setup
 * Switch to the cluster you want the backups for with `sku context <clustername>`. You can check wich clusters are available with `sku context`.
 * Get the name (! not the value of "node"-label like "worker1") of the node you want the backup for, e.g. `k3s2021-1` for our k3s2021 cluster.
 * Execute `kubectl mount-backup <node name>` and enter the passphrase used to encrypt the backup. This passphrase should be found in Bitwarden (for our k3s2021 it is the one with many !!!)
@@ -46,7 +46,9 @@ There are several available commands to restore different data. Currently, our c
 #### Restore Config
 * In the mounted backup files, go to the directory for the namespace you want to restore the config for, e.g.: `cd ~/src/k8s/backup/worker1/*/codimd/`
 * Change the cluster your sku points to (with sku context) to the desired cluster
-* Since a) our clusters have operators and b) we want to test if the mechanisms to automatically create resources work, we don't want to apply all the resources in the backup as they are. To only get the manifests we really need execute `sku restore clean-manifests -f config` and pipe it to kubectl apply like so: `sku restore clean-manifests -f config | kubectl apply -f - --dry-run=client` or to actually execute`sku restore clean-manifests -f config | kubectl apply -f -`
+* Since a) our clusters have operators and b) we want to test if the mechanisms to automatically create resources work, we don't want to apply all the resources in the backup as they are. 
+  To only get the manifests we really need execute `sku restore clean-manifests -f config` and pipe it to kubectl apply like so: `sku restore clean-manifests -f config | kubectl apply -f - --dry-run=client` 
+  or to actually execute`sku restore clean-manifests -f config | kubectl apply -f -`
 * Wait for pods to be ready by checking with `sku ns <your namespace>` and `kubectl get pods -w`
 
 #### Restore Databases
