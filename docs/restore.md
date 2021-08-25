@@ -34,7 +34,7 @@ Done in 2 Steps:
 * Prerequisites: see Local Setup
 * Switch to the cluster you want the backups for with `sku context <clustername>`. You can check wich clusters are available with `sku context`.
 * Get the name (! not the value of "node"-label like "worker1") of the node you want the backup for, e.g. `k3s2021-1` for our k3s2021 cluster.
-* Execute `kubectl mount-backup <node name>` and enter the passphrase used to encrypt the backup. This passphrase should be found in Bitwarden (for our k3s2021 it is the one with many !!!)
+* Execute `sku mount-backup <node name>` and enter the passphrase used to encrypt the backup. This passphrase should be found in Bitwarden (for our k3s2021 it is the one with many !!!)
 * Now the finder should be opened, and you can browse the backup.
 * The backups are mounted to ~/src/k8s/backup/...
 * When finished, execute `sku umount-backup k3s2021-1` to unmount the backup!!
