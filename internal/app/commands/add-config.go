@@ -45,7 +45,8 @@ It is basically doing what is explained in https://github.com/kubernetes/kuberne
 		kubeConfig := userHomeDir + "/.kube/config"
 
 		kubectlCommand := exec.Command("/usr/local/bin/kubectl", "config", "view", "--flatten")
-		kubectlCommand.Env = append(env, fmt.Sprintf(`KUBECONFIG=%s:%s`, kubeConfig, otherKubeconfigFile))
+		// the 1st kubeconfig file overrides the last one.
+		kubectlCommand.Env = append(env, fmt.Sprintf(`KUBECONFIG=%s:%s`, otherKubeconfigFile, kubeConfig))
 		output, err := kubectlCommand.Output()
 		if err != nil {
 			log.Fatal(err)
@@ -56,7 +57,6 @@ It is basically doing what is explained in https://github.com/kubernetes/kuberne
 		fmt.Printf("%v\n", aurora.Green("Updated ~/.kube/config."))
 	},
 }
-
 
 func init() {
 	RootCmd.AddCommand(addConfigCommand)
