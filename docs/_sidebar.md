@@ -22,7 +22,6 @@
 - [**NEW:** Restore Backups](restore.md)
 
 - [Alpha Features / Experiments](alpha.md)
-    - [sku encrypt](alpha.md#sku-encrypt)
     - [sku rancher-backup](alpha.md#sku-rancher-backup)
 - [WIP: backup restore](restore.md)
     
