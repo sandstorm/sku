@@ -38,8 +38,8 @@ Prerequisites (needed for mounting to work on OSX >=11.0):
 On first run, you'll get an error about untrusted software. '
 `,
 	Example: `
-	sku mount-backup worker1
-	sku mount-backup worker2
+	sku mount-backup k3s2021-1
+	sku mount-backup k3s2021-2
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -127,8 +127,8 @@ var umountCommand = &cobra.Command{
 ALPHA Quality!
 `,
 	Example: `
-	sku umount-backup worker1
-	sku umount-backup worker2
+	sku umount-backup k3s2021-1
+	sku umount-backup k3s2021-2
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
