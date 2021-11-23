@@ -7,6 +7,8 @@ before:
 builds:
   -
     id: "sku"
+    env:
+      - CGO_ENABLED=1
     main: ./cmd/sku/sku.go
     goos:
       - darwin
@@ -16,6 +18,8 @@ builds:
       - arm64
   -
     id: "sandstorm_plugin"
+    env:
+      - CGO_ENABLED=1
     main: plugin/sandstorm/sandstorm_plugin.go
     flags: -buildmode=plugin
     binary: "sku_plugins/sandstorm.so"
