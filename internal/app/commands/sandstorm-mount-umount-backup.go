@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"context"
@@ -16,14 +16,12 @@ import (
 	"syscall"
 )
 
-type plugin struct {
-}
-
 const backupSecretNamespace = "backup-job-downloads"
 const backupSecretName = "backup-readonly-credentials"
 
-func main() {
-	println("This is a sku plugin - not to be executed directly. This main function is needed to make goreleaser happy :-)")
+func init() {
+	RootCmd.AddCommand(mountCommand)
+	RootCmd.AddCommand(umountCommand)
 }
 
 var mountCommand = &cobra.Command{
@@ -149,10 +147,3 @@ ALPHA Quality!
 		}
 	},
 }
-
-func (p plugin) InitializeCommands(rootCommand *cobra.Command) {
-	rootCommand.AddCommand(mountCommand)
-	rootCommand.AddCommand(umountCommand)
-}
-
-var Plugin plugin
