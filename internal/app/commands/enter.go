@@ -89,10 +89,26 @@ selector.
 			i = getNumberChoice()
 		}
 
-		fmt.Printf("Connecting to %v in %v:\n", aurora.Green(podList.Items[i].Name), aurora.Green(currentContext))
+		containerName := ""
+		if len(podList.Items[i].Spec.Containers) > 1 {
+			fmt.Printf("Which container?.\n")
+			for ci, c := range podList.Items[i].Spec.Containers {
+				fmt.Printf("%d: %v\n", ci, aurora.Green(c.Name))
+			}
+			ci := getNumberChoice()
 
+			containerName = podList.Items[i].Spec.Containers[ci].Name
+		}
+
+		fmt.Printf("Connecting to %v %s in %v:\n", aurora.Green(podList.Items[i].Name), containerName, aurora.Green(currentContext))
+
+		kubectlArgs := []string{"kubectl", "exec", "-it"}
+		if containerName != "" {
+			kubectlArgs = append(kubectlArgs, "-c", containerName)
+		}
 		// enter bash or sh
-		syscall.Exec("/usr/local/bin/kubectl", []string{"kubectl", "exec", "-it", podList.Items[i].Name, "--", "/bin/sh", "-c", "[ -e /bin/bash ] && exec /bin/bash || exec /bin/sh"}, os.Environ())
+		kubectlArgs = append(kubectlArgs, podList.Items[i].Name, "--", "/bin/sh", "-c", "[ -e /bin/bash ] && exec /bin/bash || exec /bin/sh")
+		syscall.Exec("/usr/local/bin/kubectl", kubectlArgs, os.Environ())
 	},
 }
 

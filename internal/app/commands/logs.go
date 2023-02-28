@@ -74,9 +74,25 @@ selector.
 
 		i := getNumberChoice()
 
-		fmt.Printf("Showing Logs to %v in %v:\n", aurora.Green(podList.Items[i].Name), aurora.Green(currentContext))
+		containerName := ""
+		if len(podList.Items[i].Spec.Containers) > 1 {
+			fmt.Printf("Which container?.\n")
+			for ci, c := range podList.Items[i].Spec.Containers {
+				fmt.Printf("%d: %v\n", ci, aurora.Green(c.Name))
+			}
+			ci := getNumberChoice()
 
-		syscall.Exec("/usr/local/bin/kubectl", []string{"kubectl", "logs", "-f", podList.Items[i].Name}, os.Environ())
+			containerName = podList.Items[i].Spec.Containers[ci].Name
+		}
+
+		fmt.Printf("Showing Logs to %v %s in %v:\n", aurora.Green(podList.Items[i].Name), containerName, aurora.Green(currentContext))
+
+		kubectlArgs := []string{"kubectl", "logs", "-f"}
+		if containerName != "" {
+			kubectlArgs = append(kubectlArgs, "-c", containerName)
+		}
+		kubectlArgs = append(kubectlArgs, podList.Items[i].Name)
+		syscall.Exec("/usr/local/bin/kubectl", kubectlArgs, os.Environ())
 	},
 }
 
