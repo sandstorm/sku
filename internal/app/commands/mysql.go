@@ -34,16 +34,17 @@ func BuildMysqlCommand() *cobra.Command {
 	dbPassword := ""
 
 	var mysqlCommand = &cobra.Command{
-		Use:                   "mysql [cli|mycli|sequelace|beekeeper] (extra-params)",
+		Use:                   "mysql [usql|cli|mycli|sequelace|beekeeper] (extra-params)",
 		DisableFlagsInUseLine: true,
-		ValidArgs:             []string{"cli", "mycli", "sequelace", "beekeeper"},
+		ValidArgs:             []string{"usql", "cli", "mycli", "sequelace", "beekeeper"},
 		Args:                  cobra.MinimumNArgs(1),
 		Short:                 "Build a mysql connection and enter it via one of the given tools",
 		Long: `
-drop into a MySQL CLI to the given target
+drop into a MySQL CLI to the given target.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			allowedArgs := map[string]bool{
+				"usql":      true,
 				"cli":       true,
 				"mycli":     true,
 				"sequelace": true,
@@ -68,6 +69,18 @@ drop into a MySQL CLI to the given target
 			defer db.Close()
 
 			switch args[0] {
+			case "usql":
+				usql := exec.Command(
+					"usql",
+					fmt.Sprintf("mysql://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName),
+				)
+				usql.Stdout = os.Stdout
+				usql.Stderr = os.Stderr
+				usql.Stdin = os.Stdin
+
+				usql.Run()
+
+				break
 			case "cli":
 				mysqlArgs := []string{
 					"--host=127.0.0.1",

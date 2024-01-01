@@ -34,9 +34,9 @@ func BuildPostgresCommand() *cobra.Command {
 	dbPassword := ""
 
 	var postgresCommand = &cobra.Command{
-		Use:                   "postgres [cli|pgcli|beekeeper] (extra-params)",
+		Use:                   "postgres [usql|cli|pgcli|beekeeper] (extra-params)",
 		DisableFlagsInUseLine: true,
-		ValidArgs:             []string{"cli", "pgcli", "beekeeper"},
+		ValidArgs:             []string{"usql", "cli", "pgcli", "beekeeper"},
 		Args:                  cobra.MinimumNArgs(1),
 		Short:                 "Build a postgres connection and enter it via one of the given tools",
 		Long: `
@@ -44,6 +44,7 @@ drop into a MySQL CLI to the given target
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			allowedArgs := map[string]bool{
+				"usql":      true,
 				"cli":       true,
 				"pgcli":     true,
 				"beekeeper": true,
@@ -67,6 +68,18 @@ drop into a MySQL CLI to the given target
 			defer db.Close()
 
 			switch args[0] {
+			case "usql":
+				usql := exec.Command(
+					"usql",
+					fmt.Sprintf("postgres://%s:%s@127.0.0.1:%d/%s", dbUser, dbPassword, localDbProxyPort, dbName),
+				)
+				usql.Stdout = os.Stdout
+				usql.Stderr = os.Stderr
+				usql.Stdin = os.Stdin
+
+				usql.Run()
+
+				break
 			case "cli":
 				psqlArgs := []string{
 					"--host=127.0.0.1",
