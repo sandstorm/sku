@@ -1,5 +1,5 @@
 .idea
-sku
+/sku
 *.so
 dist
 backupConfig.json
