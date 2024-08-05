@@ -15,17 +15,15 @@
 package commands
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/sandstorm/sku/pkg/kubernetes"
+	"github.com/sandstorm/sku/pkg/utility"
 	"github.com/spf13/cobra"
 	clientV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -86,7 +84,7 @@ selector.
 		case 1:
 			i = lastRunningPodIndex
 		default:
-			i = getNumberChoice()
+			i = utility.GetNumberChoice()
 		}
 
 		containerName := ""
@@ -95,7 +93,7 @@ selector.
 			for ci, c := range podList.Items[i].Spec.Containers {
 				fmt.Printf("%d: %v\n", ci, aurora.Green(c.Name))
 			}
-			ci := getNumberChoice()
+			ci := utility.GetNumberChoice()
 
 			containerName = podList.Items[i].Spec.Containers[ci].Name
 		}
@@ -110,18 +108,6 @@ selector.
 		kubectlArgs = append(kubectlArgs, podList.Items[i].Name, "--", "/bin/sh", "-c", "[ -e /bin/bash ] && exec /bin/bash || exec /bin/sh")
 		syscall.Exec("/usr/local/bin/kubectl", kubectlArgs, os.Environ())
 	},
-}
-
-func getNumberChoice() int {
-	for {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Your Choice: ")
-		userInput, _ := reader.ReadString('\n')
-		i, err := strconv.Atoi(strings.TrimSpace(userInput))
-		if err == nil {
-			return i
-		}
-	}
 }
 
 func init() {

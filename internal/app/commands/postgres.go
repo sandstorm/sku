@@ -153,10 +153,10 @@ drop into a MySQL CLI to the given target
 		},
 	}
 
-	postgresCommand.Flags().StringVarP(&dbHost, "dbHost", "", "eval:configmap('db').DB_HOST", "filename that contains the configuration to apply")
-	postgresCommand.Flags().StringVarP(&dbName, "dbName", "", "eval:configmap('db').DB_NAME", "filename that contains the configuration to apply")
-	postgresCommand.Flags().StringVarP(&dbUser, "dbUser", "", "eval:configmap('db').DB_USER", "filename that contains the configuration to apply")
-	postgresCommand.Flags().StringVarP(&dbPassword, "dbPassword", "", "eval:secret('db').DB_PASSWORD", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbHost, "dbHost", "", "eval:configmap(selectInteractively('DB_HOST')).DB_HOST", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbName, "dbName", "", "eval:configmap(selectInteractively('DB_HOST')).DB_NAME", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbUser, "dbUser", "", "eval:configmap(selectInteractively('DB_HOST')).DB_USER", "filename that contains the configuration to apply")
+	mysqlCommand.Flags().StringVarP(&dbPassword, "dbPassword", "", "eval:secret(selectInteractively('DB_HOST')).DB_PASSWORD", "filename that contains the configuration to apply")
 
 	return postgresCommand
 }

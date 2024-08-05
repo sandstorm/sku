@@ -1,8 +1,13 @@
 package utility
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/kardianos/osext"
 	"log"
+	"os"
+	"strconv"
+	"strings"
 )
 
 func GetSkuExecutableFileName() string {
@@ -12,4 +17,16 @@ func GetSkuExecutableFileName() string {
 	}
 	return skuExecutablePathAndFilename
 
+}
+
+func GetNumberChoice() int {
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Your Choice: ")
+		userInput, _ := reader.ReadString('\n')
+		i, err := strconv.Atoi(strings.TrimSpace(userInput))
+		if err == nil {
+			return i
+		}
+	}
 }

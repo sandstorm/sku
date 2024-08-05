@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/sandstorm/sku/pkg/kubernetes"
+	"github.com/sandstorm/sku/pkg/utility"
 	"github.com/spf13/cobra"
 	clientV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +73,7 @@ selector.
 			}
 		}
 
-		i := getNumberChoice()
+		i := utility.GetNumberChoice()
 
 		containerName := ""
 		if len(podList.Items[i].Spec.Containers) > 1 {
@@ -80,7 +81,7 @@ selector.
 			for ci, c := range podList.Items[i].Spec.Containers {
 				fmt.Printf("%d: %v\n", ci, aurora.Green(c.Name))
 			}
-			ci := getNumberChoice()
+			ci := utility.GetNumberChoice()
 
 			containerName = podList.Items[i].Spec.Containers[ci].Name
 		}

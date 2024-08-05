@@ -22,6 +22,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/logrusorgru/aurora"
 	"github.com/manifoldco/promptui"
+	"github.com/sandstorm/sku/pkg/utility"
 	clientV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -38,6 +39,7 @@ import (
 var clientset *kubernetes.Clientset
 var config *rest.Config
 var apiConfig *clientcmdapi.Config
+
 func KubernetesInit() {
 
 	loader := clientcmd.NewDefaultClientConfigLoadingRules()
@@ -57,11 +59,9 @@ func KubernetesInit() {
 	}
 }
 
-
 func KubernetesApiConfig() *clientcmdapi.Config {
 	return apiConfig
 }
-
 
 func KubernetesClientset() *kubernetes.Clientset {
 	return clientset
@@ -75,6 +75,7 @@ type ClientVersionResponse struct {
 	Major string `json:"major"`
 	Minor string `json:"minor"`
 }
+
 func EnsureVersionOfKubernetesCliSupportsExternalAuth() {
 	cmd := exec.Command("kubectl", "version", "--client", "--output=json")
 	var out bytes.Buffer
@@ -98,7 +99,6 @@ func EnsureVersionOfKubernetesCliSupportsExternalAuth() {
 		log.Fatalf("ABORTING!\n")
 	}
 }
-
 
 func EnsureContextExists(newContext string) {
 	foundContext := false
@@ -151,7 +151,6 @@ func NamespacesToString(namespaceList *clientV1.NamespaceList) []string {
 	return namespaces
 }
 
-
 func PrintExistingNamespaces(namespaceList *clientV1.NamespaceList) {
 	currentContext := KubernetesApiConfig().CurrentContext
 	context := KubernetesApiConfig().Contexts[currentContext]
@@ -201,6 +200,7 @@ func SelectPod(promptLabel string) string {
 	return result
 }
 
+var selectedConfigmap = ""
 
 func EvalScriptParameter(parameter string) string {
 	if strings.HasPrefix(parameter, "eval:") {
@@ -222,10 +222,43 @@ func EvalScriptParameter(parameter string) string {
 			return converted
 		})
 
+		vm.Set("selectInteractively", func(variableNameToSearchFor string) string {
+			if len(selectedConfigmap) > 0 {
+				return selectedConfigmap
+			}
+
+			currentContext := KubernetesApiConfig().CurrentContext
+			k8sContextDefinition := KubernetesApiConfig().Contexts[currentContext]
+			configMaps, err := KubernetesClientset().CoreV1().ConfigMaps(k8sContextDefinition.Namespace).List(context.Background(), metav1.ListOptions{})
+
+			if err != nil {
+				fmt.Printf("%s Config Maps could not be fetched (evaluating %s):\n    %s\n", aurora.Red("ERROR:"), aurora.Bold(parameter), err)
+				os.Exit(1)
+			}
+			configMapsIncludingVar := make([]clientV1.ConfigMap, 0)
+			for _, configMap := range configMaps.Items {
+				if len(configMap.Data[variableNameToSearchFor]) > 0 {
+					configMapsIncludingVar = append(configMapsIncludingVar, configMap)
+				}
+			}
+
+			fmt.Printf("Which ConfigMap?.\n")
+			for ci, c := range configMapsIncludingVar {
+				fmt.Printf("%d: %v\n", ci, aurora.Green(c.Name))
+			}
+			ci := utility.GetNumberChoice()
+
+			selectedConfigmap = configMapsIncludingVar[ci].Name
+
+			return selectedConfigmap
+
+		})
+
 		vm.Set("configmap", func(configmapName string) map[string]string {
 			currentContext := KubernetesApiConfig().CurrentContext
 			k8sContextDefinition := KubernetesApiConfig().Contexts[currentContext]
 			configMap, err := KubernetesClientset().CoreV1().ConfigMaps(k8sContextDefinition.Namespace).Get(context.Background(), configmapName, metav1.GetOptions{})
+
 			if err != nil {
 				fmt.Printf("%s Config Map %s could not be fetched (evaluating %s):\n    %s\n", aurora.Red("ERROR:"), aurora.Bold(configmapName), aurora.Bold(parameter), err)
 				// TODO: get rid of os.Exit here (breaks the outer goroutines)
@@ -254,4 +287,3 @@ func EvalScriptParameter(parameter string) string {
 	}
 
 }
-
