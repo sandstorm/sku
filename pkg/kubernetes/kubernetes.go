@@ -242,7 +242,7 @@ func EvalScriptParameter(parameter string) string {
 				}
 			}
 
-			fmt.Printf("Which ConfigMap?.\n")
+			fmt.Printf("Found multiple ConfigMaps containing Database Credentials:\n")
 			for ci, c := range configMapsIncludingVar {
 				fmt.Printf("%d: %v\n", ci, aurora.Green(c.Name))
 			}
