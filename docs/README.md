@@ -34,9 +34,10 @@ The following commands are supported:
 - [sku context](https://sandstorm.github.io/sku/#/context-and-ns?id=sku-context)
 - [sku ns](https://sandstorm.github.io/sku/#/context-and-ns?id=sku-ns)
 - [sku enter](https://sandstorm.github.io/sku/#/enter)
+- [**NEW** sku debug](https://sandstorm.github.io/sku/#/debug)
 - [sku logs](https://sandstorm.github.io/sku/#/logs)
-- [**NEW:** sku mysql](https://sandstorm.github.io/sku/#/database?id=entering-a-mysql-database)
-- [**NEW:** sku postgres](https://sandstorm.github.io/sku/#/database?id=entering-a-postgres-database)
+- [sku mysql](https://sandstorm.github.io/sku/#/database?id=entering-a-mysql-database)
+- [sku postgres](https://sandstorm.github.io/sku/#/database?id=entering-a-postgres-database)
 - [**WIP:** sku restore](https://sandstorm.github.io/sku/#/restore)
 
 Additionally, some [alpha features](alpha.md) exist.
