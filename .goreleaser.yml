@@ -1,3 +1,5 @@
+version: 2
+
 env_files:
   github_token: ~/.config/goreleaser/github_token
 
@@ -25,7 +27,7 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
   filters:
@@ -37,7 +39,7 @@ brews:
   -
     name: sku
 
-    tap:
+    repository:
       owner: sandstorm
       name: homebrew-tap
 
@@ -49,7 +51,7 @@ brews:
 
     # Folder inside the repository to put the formula.
     # Default is the root folder.
-    folder: Formula
+    directory: Formula
 
     # Your app's homepage.
     # Default is empty.
