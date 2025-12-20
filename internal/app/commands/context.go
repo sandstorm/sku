@@ -58,7 +58,11 @@ This command allows to switch between different configured Kubernetes clusters.`
 			kubernetes.EnsureContextExists(newContext)
 
 			config.CurrentContext = newContext
-			clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
+			err := clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
+			if err != nil {
+				fmt.Printf(aurora.Red("Could not modify config: %v\n").String(), err)
+				return
+			}
 
 			fmt.Printf("Switched to context %v.\n", aurora.Green(newContext))
 		}

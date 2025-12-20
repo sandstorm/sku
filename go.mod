@@ -9,6 +9,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jackc/pgx/v4 v4.10.1
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/logrusorgru/aurora v0.0.0-20190428105938-cea283e61946
 	github.com/logrusorgru/aurora/v3 v3.0.0
@@ -19,5 +20,4 @@ require (
 	k8s.io/api v0.20.1
 	k8s.io/apimachinery v0.20.1
 	k8s.io/client-go v0.20.0
-	k8s.io/utils v0.0.0-20201110183641-67b214c5f920 // indirect
 )

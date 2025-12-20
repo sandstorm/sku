@@ -55,13 +55,21 @@ List and switch kubernetes namespaces.`,
 		} else {
 			config := kubernetes.KubernetesApiConfig()
 			currentContext := config.CurrentContext
-			context := kubernetes.KubernetesApiConfig().Contexts[currentContext]
+			context, ok := config.Contexts[currentContext]
+			if !ok {
+				fmt.Printf(aurora.Red("Current context %v not found in kubeconfig\n").String(), currentContext)
+				return
+			}
 			newNamespace := args[0]
 
 			kubernetes.EnsureNamespaceExists(newNamespace, namespaceList)
 
 			context.Namespace = newNamespace
-			clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
+			err := clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), *config, false)
+			if err != nil {
+				fmt.Printf(aurora.Red("Could not modify config: %v\n").String(), err)
+				return
+			}
 
 			fmt.Printf("Switched to namespace %v in context %v.\n", aurora.Green(newNamespace), aurora.Green(currentContext))
 		}
