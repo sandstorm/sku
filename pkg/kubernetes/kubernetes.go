@@ -19,6 +19,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+
 	"github.com/dop251/goja"
 	"github.com/logrusorgru/aurora"
 	"github.com/manifoldco/promptui"
@@ -29,33 +35,34 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"log"
-	"os"
-	"os/exec"
-	"strconv"
-	"strings"
 )
 
 var clientset *kubernetes.Clientset
 var config *rest.Config
 var apiConfig *clientcmdapi.Config
+var clientsetInitErr error
 
 func KubernetesInit() {
 
 	loader := clientcmd.NewDefaultClientConfigLoadingRules()
 	var err error
 	apiConfig, err = loader.Load()
-
-	config, err = clientcmd.BuildConfigFromKubeconfigGetter("", loader.Load)
-
 	if err != nil {
 		panic(err.Error())
 	}
 
-	// create the clientset
-	clientset, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
+	config, clientsetInitErr = clientcmd.BuildConfigFromKubeconfigGetter("", loader.Load)
+	if clientsetInitErr != nil {
+		return
+	}
+
+	clientset, clientsetInitErr = kubernetes.NewForConfig(config)
+}
+
+func ensureClientset() {
+	if clientsetInitErr != nil {
+		fmt.Printf("%v %s\n", aurora.Red("ERROR:"), clientsetInitErr.Error())
+		os.Exit(1)
 	}
 }
 
@@ -64,6 +71,7 @@ func KubernetesApiConfig() *clientcmdapi.Config {
 }
 
 func KubernetesClientset() *kubernetes.Clientset {
+	ensureClientset()
 	return clientset
 }
 
