@@ -75,6 +75,20 @@ func KubernetesClientset() *kubernetes.Clientset {
 	return clientset
 }
 
+func KubernetesRestConfig() *rest.Config {
+	ensureClientset()
+	return config
+}
+
+func CurrentNamespace() string {
+	currentContext := KubernetesApiConfig().CurrentContext
+	ctxDef, ok := KubernetesApiConfig().Contexts[currentContext]
+	if !ok || ctxDef == nil {
+		return ""
+	}
+	return ctxDef.Namespace
+}
+
 type VersionResponse struct {
 	ClientVersion ClientVersionResponse `json:"clientVersion"`
 }
