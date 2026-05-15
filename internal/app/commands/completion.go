@@ -13,38 +13,22 @@ import (
 var completionCmd = &cobra.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",
 	Short: "Generate completion script for common shells",
-	Long: `Generate Autocomplete Scripts for common shells for the SKU tool
+	Long: `Generate autocompletion scripts for the SKU tool.
 
-To load completions:
+We officially support and document zsh only — see
+https://sandstorm.github.io/sku/#/autocompletion for the full guide.
 
-Bash:
+Recommended install (zsh + oh-my-zsh). Removes any stale _sku from
+$fpath first, then installs into oh-my-zsh's custom completions dir
+(already on $fpath, no .zshrc edits needed):
 
-$ source <(sku completion bash)
+  for d in $fpath; do [[ -f "$d/_sku" ]] && rm -f "$d/_sku"; done
+  mkdir -p "$ZSH_CUSTOM/completions"
+  sku completion zsh > "$ZSH_CUSTOM/completions/_sku"
+  rm -f ~/.zcompdump* && exec zsh
 
-# To load completions for each session, execute once:
-Linux:
-  $ sku completion bash > /etc/bash_completion.d/sku
-MacOS:
-  $ sku completion bash > /usr/local/etc/bash_completion.d/sku
-
-Zsh:
-
-# If shell completion is not already enabled in your environment you will need
-# to enable it.  You can execute the following once:
-
-$ echo "autoload -U compinit; compinit" >> ~/.zshrc
-
-# To load completions for each session, execute once:
-$ sku completion zsh > "${fpath[1]}/_sku"
-
-# You will need to start a new shell for this setup to take effect.
-
-Fish:
-
-$ sku completion fish | source
-
-# To load completions for each session, execute once:
-$ sku completion fish > ~/.config/fish/completions/sku.fish
+bash / fish / powershell scripts can still be generated but are not
+documented or supported.
 `,
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},

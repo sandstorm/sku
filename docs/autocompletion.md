@@ -1,50 +1,46 @@
 # Setting Up Autocompletion for SKU
 
-We support autocompletion for *bash*, *zsh* and *fish* shells.
+> **zsh + [oh-my-zsh](https://ohmyz.sh/) only.** That's our supported setup.
 
-## Bash
+## Install / refresh
 
-**To load completions for each session, execute once:**
-
-Linux:
-
-```bash
-sku completion bash > /etc/bash_completion.d/sku
-```
-
-MacOS:
-
-```bash
-sku completion bash > /usr/local/etc/bash_completion.d/sku
-```
-
-**You will need to start a new shell for this setup to take effect.**
-
-## ZSH
-
-If shell completion is not already enabled in your environment you will need
-to enable it. You can execute the following once:
+Paste this into your shell. It removes any stale `_sku` from anywhere on
+`$fpath` and installs a fresh one into oh-my-zsh's custom completions
+directory (already on `$fpath`, so no `.zshrc` edits needed):
 
 ```zsh
-echo "autoload -U compinit; compinit" >> ~/.zshrc
+# uninstall previously installed _sku autocompleter if any
+for d in $fpath; do [[ -f "$d/_sku" ]] && rm -f "$d/_sku"; done
+# install completion
+mkdir -p "$ZSH_CUSTOM/completions"
+sku completion zsh > "$ZSH_CUSTOM/completions/_sku"
+rm -f ~/.zcompdump* && exec zsh
 ```
 
-NOTE: If you use [oh-my-zsh](https://ohmyz.sh/), you **do not** need to do this, as this is already set up. 
+`$ZSH_CUSTOM` defaults to `~/.oh-my-zsh/custom`, so the script lands at
+`~/.oh-my-zsh/custom/completions/_sku`.
 
-**To load completions for each session, execute once:**
+## Why this location?
+
+oh-my-zsh prepends `$ZSH_CUSTOM/completions` to `$fpath` and calls
+`compinit` for you — it's the idiomatic home for third-party zsh
+completions when oh-my-zsh is in use. No plugin to maintain, no `.zshrc`
+edits, survives oh-my-zsh upgrades.
+
+Avoid:
+
+- `${fpath[1]}/_sku` — whatever happens to be first on `$fpath`, often a
+  shared Homebrew or system dir that gets overwritten on update.
+- `~/.oh-my-zsh/custom/plugins/<name>/_sku` — only works if that plugin
+  is enabled in `plugins=(...)`.
+
+## Verifying
 
 ```zsh
-sku completion zsh > "${fpath[1]}/_sku"
+whence -v _sku    # → /Users/you/.oh-my-zsh/custom/completions/_sku
+sku <TAB>         # lists subcommands
+sku nats <TAB>    # passthrough to the nats CLI (Layer 2)
 ```
 
-**You will need to start a new shell for this setup to take effect.**
-
-## Fish
-
-**To load completions for each session, execute once:**
-
-```fish
-sku completion fish > ~/.config/fish/completions/sku.fish
-```
-
-**You will need to start a new shell for this setup to take effect.**
+If `whence -v _sku` reports a different path, the cleanup loop missed a
+directory — delete that file manually and re-run.
