@@ -3,10 +3,7 @@
     - [Installation](README.md#installation)
     - [Features](README.md#features)
   
-- [**NEW:** Autocompletion](autocompletion.md)
-    - [bash](autocompletion.md#bash)
-    - [zsh](autocompletion.md#zsh)
-    - [fish](autocompletion.md#fish)
+- [**NEW:** Autocompletion (zsh + oh-my-zsh)](autocompletion.md)
 
 - [Context and Namespaces](context-and-ns.md)
     - [sku add-config](context-and-ns.md#sku-add-config)
@@ -20,6 +17,8 @@
   - [**NEW:** sku postgres](database.md#entering-a-postgres-database)
   
 - [**NEW:** Restore Backups](restore.md)
+
+- [**NEW:** sku nats (NATS via NatsUser)](nats.md)
 
 - [Alpha Features / Experiments](alpha.md)
     - [sku rancher-backup](alpha.md#sku-rancher-backup)

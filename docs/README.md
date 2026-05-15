@@ -38,6 +38,7 @@ The following commands are supported:
 - [sku logs](https://sandstorm.github.io/sku/#/logs)
 - [sku mysql](https://sandstorm.github.io/sku/#/database?id=entering-a-mysql-database)
 - [sku postgres](https://sandstorm.github.io/sku/#/database?id=entering-a-postgres-database)
+- [**NEW** sku nats](https://sandstorm.github.io/sku/#/nats) — requires the [Sandstorm NatsAuthOperator](https://github.com/sandstorm/NatsAuthOperator) in the target cluster
 - [**WIP:** sku restore](https://sandstorm.github.io/sku/#/restore)
 
 Additionally, some [alpha features](alpha.md) exist.
