@@ -16,6 +16,7 @@ import (
 	"github.com/sandstorm/sku/pkg/kubernetes"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
@@ -28,11 +29,25 @@ var natsUserGVR = schema.GroupVersionResource{
 
 // Top-level nats CLI subcommands used for Layer 1 completion.
 var natsTopLevelCommands = []string{
-	"pub", "sub", "request", "reply",
-	"stream", "consumer", "kv", "obj",
-	"account", "auth", "bench", "context",
-	"server", "traffic", "schema", "events",
-	"latency", "rtt", "errors",
+	"account", "audit", "auth", "bench",
+	"consumer", "context", "counter", "errors",
+	"events", "kv", "latency", "object",
+	"publish", "reply", "request", "rtt",
+	"schema", "server", "service", "stream",
+	"subscribe", "top", "trace",
+}
+
+// Subcommands that need to be run from the NATS system account
+// (e.g. they publish/subscribe under $SYS.>). For these we
+// auto-prefer NatsUsers whose status.isSystemAccount is true.
+var natsServerAdminCommands = map[string]bool{
+	"server":  true,
+	"account": true,
+	"events":  true,
+	"top":     true,
+	"trace":   true,
+	"audit":   true,
+	"latency": true,
 }
 
 func BuildNatsCommand() *cobra.Command {
@@ -151,7 +166,7 @@ func runNats(serverOverride, userOverride string, args []string) {
 		fail("could not build dynamic client: %v", err)
 	}
 
-	user, err := selectNatsUser(dyn, ns, userOverride)
+	user, err := selectNatsUser(dyn, ns, userOverride, isServerAdminCommand(args))
 	if err != nil {
 		fail("%v", err)
 	}
@@ -248,7 +263,7 @@ type natsUserRef struct {
 	obj map[string]interface{}
 }
 
-func selectNatsUser(dyn dynamic.Interface, ns, override string) (*natsUserRef, error) {
+func selectNatsUser(dyn dynamic.Interface, ns, override string, preferSystemAccount bool) (*natsUserRef, error) {
 	if override != "" {
 		u, err := dyn.Resource(natsUserGVR).Namespace(ns).Get(context.Background(), override, metav1.GetOptions{})
 		if err != nil {
@@ -264,15 +279,32 @@ func selectNatsUser(dyn dynamic.Interface, ns, override string) (*natsUserRef, e
 	if len(list.Items) == 0 {
 		return nil, fmt.Errorf("no NatsUser found in namespace %s", ns)
 	}
-	if len(list.Items) == 1 {
-		u := list.Items[0]
-		fmt.Fprintf(os.Stderr, "%s using only NatsUser in %s: %s\n",
+
+	items := list.Items
+	if preferSystemAccount {
+		sys := make([]unstructured.Unstructured, 0, len(items))
+		for _, u := range items {
+			if isSystemAccountUser(u.Object) {
+				sys = append(sys, u)
+			}
+		}
+		if len(sys) == 0 {
+			return nil, fmt.Errorf("this nats subcommand needs a system-account NatsUser (status.isSystemAccount=true), but none was found in namespace %s", ns)
+		}
+		fmt.Fprintf(os.Stderr, "%s server-admin command — restricting to system-account NatsUsers (status.isSystemAccount=true)\n",
+			aurora.Yellow("INFO:"))
+		items = sys
+	}
+
+	if len(items) == 1 {
+		u := items[0]
+		fmt.Fprintf(os.Stderr, "%s using NatsUser in %s: %s\n",
 			aurora.Yellow("INFO:"), ns, u.GetName())
 		return &natsUserRef{name: u.GetName(), namespace: ns, obj: u.Object}, nil
 	}
 
-	names := make([]string, 0, len(list.Items))
-	for _, u := range list.Items {
+	names := make([]string, 0, len(items))
+	for _, u := range items {
 		names = append(names, u.GetName())
 	}
 	prompt := promptui.Select{
@@ -283,8 +315,30 @@ func selectNatsUser(dyn dynamic.Interface, ns, override string) (*natsUserRef, e
 	if err != nil {
 		return nil, fmt.Errorf("selection cancelled: %v", err)
 	}
-	u := list.Items[idx]
+	u := items[idx]
 	return &natsUserRef{name: u.GetName(), namespace: ns, obj: u.Object}, nil
+}
+
+func isSystemAccountUser(obj map[string]interface{}) bool {
+	status, ok := obj["status"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	v, _ := status["isSystemAccount"].(bool)
+	return v
+}
+
+// isServerAdminCommand inspects the args destined for the nats CLI and
+// returns true when the first non-flag token is a subcommand that
+// requires the NATS system account.
+func isServerAdminCommand(args []string) bool {
+	for _, a := range args {
+		if strings.HasPrefix(a, "-") {
+			continue
+		}
+		return natsServerAdminCommands[a]
+	}
+	return false
 }
 
 // nkeySecretRef returns the secret name + key the operator creates for a
