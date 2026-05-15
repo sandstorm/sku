@@ -3,7 +3,7 @@
     - [Installation](README.md#installation)
     - [Features](README.md#features)
   
-- [**NEW:** Autocompletion (zsh + oh-my-zsh)](autocompletion.md)
+- [**UPDATED:** Autocompletion (zsh + oh-my-zsh)](autocompletion.md)
 
 - [Context and Namespaces](context-and-ns.md)
     - [sku add-config](context-and-ns.md#sku-add-config)
@@ -12,11 +12,11 @@
 
 - [Entering a Pod](enter.md)
 - [Displaying Logs](logs.md)
-- [**NEW:** Database Clients](database.md)
-  - [**NEW:** sku mysql](database.md#entering-a-mysql-database)
-  - [**NEW:** sku postgres](database.md#entering-a-postgres-database)
+- [Database Clients](database.md)
+  - [sku mysql](database.md#entering-a-mysql-database)
+  - [sku postgres](database.md#entering-a-postgres-database)
   
-- [**NEW:** Restore Backups](restore.md)
+- [Restore Backups](restore.md)
 
 - [**NEW:** sku nats (NATS via NatsUser)](nats.md)
 
